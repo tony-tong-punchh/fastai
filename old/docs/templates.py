@@ -1,4 +1,4 @@
-HEADER = '''
+HEADER = """
 = fastai.{}
 
 == Introduction and overview
@@ -8,4 +8,4 @@ HEADER = '''
 ```
 
 
-'''
+"""

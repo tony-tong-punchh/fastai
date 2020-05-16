@@ -35,25 +35,26 @@ from .cover import setup_coverage, teardown_coverage
 
 # define colours for pretty outputs
 class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+
 
 class nocolors:
-    HEADER = ''
-    OKBLUE = ''
-    OKGREEN = ''
-    WARNING = ''
-    FAIL = ''
-    ENDC = ''
-
+    HEADER = ""
+    OKBLUE = ""
+    OKGREEN = ""
+    WARNING = ""
+    FAIL = ""
+    ENDC = ""
 
 
 class NbCellError(Exception):
     """ custom exception for error reporting. """
+
     def __init__(self, cell_num, msg, source, traceback=None, *args, **kwargs):
         self.cell_num = cell_num
         super(NbCellError, self).__init__(msg, *args, **kwargs)
@@ -72,38 +73,50 @@ def pytest_addoption(parser):
     This is called by the pytest API
     """
     group = parser.getgroup("general")
-    group.addoption('--nbval', action='store_true',
-                    help="Validate Jupyter notebooks")
+    group.addoption("--nbval", action="store_true", help="Validate Jupyter notebooks")
 
-    group.addoption('--nbval-lax', action='store_true',
-                    help="Run Jupyter notebooks, only validating output on "
-                         "cells marked with # NBVAL_CHECK_OUTPUT")
+    group.addoption(
+        "--nbval-lax",
+        action="store_true",
+        help="Run Jupyter notebooks, only validating output on "
+        "cells marked with # NBVAL_CHECK_OUTPUT",
+    )
 
-    group.addoption('--sanitize-with',
-                    help='File with regex expressions to sanitize '
-                         'the outputs. This option only works when '
-                         'the --nbval flag is passed to py.test')
+    group.addoption(
+        "--sanitize-with",
+        help="File with regex expressions to sanitize "
+        "the outputs. This option only works when "
+        "the --nbval flag is passed to py.test",
+    )
 
-    group.addoption('--current-env', action='store_true',
-                    help='Force test execution to use a python kernel in '
-                         'the same enviornment that py.test was '
-                         'launched from.')
+    group.addoption(
+        "--current-env",
+        action="store_true",
+        help="Force test execution to use a python kernel in "
+        "the same enviornment that py.test was "
+        "launched from.",
+    )
 
-    group.addoption('--nbval-cell-timeout', action='store', default=2000,
-                    type=float,
-                    help='Timeout for cell execution, in seconds.')
+    group.addoption(
+        "--nbval-cell-timeout",
+        action="store",
+        default=2000,
+        type=float,
+        help="Timeout for cell execution, in seconds.",
+    )
 
     term_group = parser.getgroup("terminal reporting")
     term_group._addoption(
-        '--nbdime', action='store_true',
-        help="view failed nbval cells with nbdime.")
+        "--nbdime", action="store_true", help="view failed nbval cells with nbdime."
+    )
 
 
 def pytest_configure(config):
     if config.option.nbdime:
         from .nbdime_reporter import NbdimeReporter
+
         reporter = NbdimeReporter(config, sys.stdout)
-        config.pluginmanager.register(reporter, 'nbdimereporter')
+        config.pluginmanager.register(reporter, "nbdimereporter")
 
 
 def pytest_collect_file(path, parent):
@@ -115,21 +128,17 @@ def pytest_collect_file(path, parent):
         return IPyNbFile(path, parent)
 
 
-
 comment_markers = {
-    'PYTEST_VALIDATE_IGNORE_OUTPUT': ('check', False),  # For backwards compatibility
-    'NBVAL_IGNORE_OUTPUT': ('check', False),
-    'NBVAL_CHECK_OUTPUT': 'check',
-    'NBVAL_RAISES_EXCEPTION': 'check_exception',
-    'NBVAL_SKIP': 'skip',
+    "PYTEST_VALIDATE_IGNORE_OUTPUT": ("check", False),  # For backwards compatibility
+    "NBVAL_IGNORE_OUTPUT": ("check", False),
+    "NBVAL_CHECK_OUTPUT": "check",
+    "NBVAL_RAISES_EXCEPTION": "check_exception",
+    "NBVAL_SKIP": "skip",
 }
 
-metadata_tags = {
-    k.lower().replace('_', '-'): v
-    for (k, v) in comment_markers.items()
-}
+metadata_tags = {k.lower().replace("_", "-"): v for (k, v) in comment_markers.items()}
 
-metadata_tags['raises-exception'] = 'check_exception'
+metadata_tags["raises-exception"] = "check_exception"
 
 
 def find_comment_markers(cellsource):
@@ -140,9 +149,9 @@ def find_comment_markers(cellsource):
     found = {}
     for line in cellsource.splitlines():
         line = line.strip()
-        if line.startswith('#'):
+        if line.startswith("#"):
             # print("Found comment in '{}'".format(line))
-            comment = line.lstrip('#').strip()
+            comment = line.lstrip("#").strip()
             if comment in comment_markers:
                 # print("Found marker {}".format(comment))
                 marker = comment_markers[comment]
@@ -154,14 +163,14 @@ def find_comment_markers(cellsource):
                 if marker_type in found:
                     warnings.warn(
                         "Conflicting comment markers found, using the latest: "
-                        " %s VS %s" %
-                        (found[marker_type], comment))
+                        " %s VS %s" % (found[marker_type], comment)
+                    )
                 found[marker_type] = comment
                 yield marker
 
 
 def find_metadata_tags(cell_metadata):
-    tags = cell_metadata.get('tags', None)
+    tags = cell_metadata.get("tags", None)
     if tags is None:
         return
     elif not isinstance(tags, list):
@@ -179,14 +188,15 @@ def find_metadata_tags(cell_metadata):
             if marker_type in found:
                 warnings.warn(
                     "Conflicting metadata tags found, using the latest: "
-                    " %s VS %s" %
-                    (found[marker_type], tag))
+                    " %s VS %s" % (found[marker_type], tag)
+                )
             found[marker_type] = tag
             yield marker
 
 
 class Dummy:
     """Needed to use xfail for our tests"""
+
     def __init__(self):
         self.__globals__ = {}
 
@@ -198,6 +208,7 @@ class IPyNbFile(pytest.File):
     in the notebook for testing.
     yields pytest items that are required by pytest.
     """
+
     def __init__(self, *args, **kwargs):
         super(IPyNbFile, self).__init__(*args, **kwargs)
         config = self.parent.config
@@ -205,16 +216,16 @@ class IPyNbFile(pytest.File):
         self.compare_outputs = not config.option.nbval_lax
         self.timed_out = False
         self.skip_compare = (
-            'metadata',
-            'traceback',
+            "metadata",
+            "traceback",
             #'text/latex',
-            'prompt_number',
-            'output_type',
-            'name',
-            'execution_count',
+            "prompt_number",
+            "output_type",
+            "name",
+            "execution_count",
         )
         if not config.option.nbdime:
-            self.skip_compare = self.skip_compare + ('image/png', 'image/jpeg')
+            self.skip_compare = self.skip_compare + ("image/png", "image/jpeg")
 
     kernel = None
 
@@ -227,13 +238,11 @@ class IPyNbFile(pytest.File):
         if self.parent.config.option.current_env:
             kernel_name = CURRENT_ENV_KERNEL_NAME
         else:
-            kernel_name = self.nb.metadata.get(
-                'kernelspec', {}).get('name', 'python')
+            kernel_name = self.nb.metadata.get("kernelspec", {}).get("name", "python")
         self.kernel = RunningKernel(kernel_name, str(self.fspath.dirname))
         self.setup_sanitize_files()
-        if getattr(self.parent.config.option, 'cov_source', None):
+        if getattr(self.parent.config.option, "cov_source", None):
             setup_coverage(self.parent.config, self.kernel, getattr(self, "fspath", None))
-
 
     def setup_sanitize_files(self):
         """
@@ -241,9 +250,8 @@ class IPyNbFile(pytest.File):
         load the contents of the file into the sanitise patterns dictionary.
         """
         for fname in self.get_sanitize_files():
-            with open(fname, 'r') as f:
+            with open(fname, "r") as f:
                 self.sanitize_patterns.update(get_sanitize_patterns(f.read()))
-
 
     def get_sanitize_files(self):
         """
@@ -258,7 +266,7 @@ class IPyNbFile(pytest.File):
         else:
             return []
 
-    def get_kernel_message(self, timeout=None, stream='iopub'):
+    def get_kernel_message(self, timeout=None, stream="iopub"):
         """
         Gets a message from the iopub channel of the notebook kernel.
         """
@@ -281,7 +289,7 @@ class IPyNbFile(pytest.File):
         for cell in self.nb.cells:
             # Skip the cells that have text, headings or related stuff
             # Only test code cells
-            if cell.cell_type == 'code':
+            if cell.cell_type == "code":
                 # The cell may contain a comment indicating that its output
                 # should be checked or ignored. If it doesn't, use the default
                 # behaviour. The --nbval option checks unmarked cells.
@@ -291,26 +299,25 @@ class IPyNbFile(pytest.File):
                     if set(comment_opts.keys()) & set(options.keys()):
                         warnings.warn(
                             "Overlapping options from comments and metadata, "
-                            "using options from comments: %s" %
-                            str(set(comment_opts.keys()) & set(options.keys())))
+                            "using options from comments: %s"
+                            % str(set(comment_opts.keys()) & set(options.keys()))
+                        )
                     for w in ws:
                         self.parent.config.warn(
                             "C1",
                             str(w.message),
-                            '%s:Cell %d' % (
-                                getattr(self, "fspath", None),
-                                cell_num))
+                            "%s:Cell %d" % (getattr(self, "fspath", None), cell_num),
+                        )
                 options.update(comment_opts)
-                options.setdefault('check', self.compare_outputs)
-                yield IPyNbCell('Cell ' + str(cell_num), self, cell_num,
-                                cell, options)
+                options.setdefault("check", self.compare_outputs)
+                yield IPyNbCell("Cell " + str(cell_num), self, cell_num, cell, options)
 
                 # Update 'code' cell count
                 cell_num += 1
 
     def teardown(self):
         if self.kernel is not None and self.kernel.is_alive():
-            if getattr(self.parent.config.option, 'cov_source', None):
+            if getattr(self.parent.config.option, "cov_source", None):
                 teardown_coverage(self.parent.config, self.kernel)
             self.kernel.stop()
 
@@ -329,7 +336,7 @@ class IPyNbCell(pytest.Item):
         self.config = parent.parent.config
         self.output_timeout = 5
         # Disable colors if we have been explicitly asked to
-        self.colors = bcolors if self.config.option.color != 'no' else nocolors
+        self.colors = bcolors if self.config.option.color != "no" else nocolors
         # _pytest.skipping assumes all pytest.Item have this attribute:
         self.obj = Dummy()
 
@@ -342,20 +349,13 @@ class IPyNbCell(pytest.Item):
         exc = excinfo.value
         cc = self.colors
         if isinstance(exc, NbCellError):
-            msg_items = [
-                cc.FAIL + "Notebook cell execution failed" + cc.ENDC]
-            formatstring = (
-                cc.OKBLUE + "Cell %d: %s\n\n" +
-                "Input:\n" + cc.ENDC + "%s\n")
-            msg_items.append(formatstring % (
-                exc.cell_num,
-                str(exc),
-                exc.source
-            ))
+            msg_items = [cc.FAIL + "Notebook cell execution failed" + cc.ENDC]
+            formatstring = cc.OKBLUE + "Cell %d: %s\n\n" + "Input:\n" + cc.ENDC + "%s\n"
+            msg_items.append(formatstring % (exc.cell_num, str(exc), exc.source))
             if exc.inner_traceback:
-                msg_items.append((
-                    cc.OKBLUE + "Traceback:" + cc.ENDC + "\n%s\n") %
-                    exc.inner_traceback)
+                msg_items.append(
+                    (cc.OKBLUE + "Traceback:" + cc.ENDC + "\n%s\n") % exc.inner_traceback
+                )
             return "\n".join(msg_items)
         else:
             return "pytest plugin exception: %s" % str(exc)
@@ -392,11 +392,13 @@ class IPyNbCell(pytest.Item):
                 # We discard the keys from the skip_compare list:
                 if key not in skip_compare:
                     # Flatten out MIME types from data of display_data and execute_result
-                    if key == 'data':
+                    if key == "data":
                         for data_key in reference[key].keys():
                             # Filter the keys in the SUB-dictionary again:
                             if data_key not in skip_compare:
-                                reference_outs[data_key].append(self.sanitize(reference[key][data_key]))
+                                reference_outs[data_key].append(
+                                    self.sanitize(reference[key][data_key])
+                                )
 
                     # Otherwise, just create a normal dictionary entry from
                     # one of the keys of the dictionary
@@ -409,7 +411,7 @@ class IPyNbCell(pytest.Item):
         for testing in test:
             for key in testing.keys():
                 if key not in skip_compare:
-                    if key == 'data':
+                    if key == "data":
                         for data_key in testing[key].keys():
                             if data_key not in skip_compare:
                                 testing_outs[data_key].append(self.sanitize(testing[key][data_key]))
@@ -425,16 +427,14 @@ class IPyNbCell(pytest.Item):
         if ref_keys - test_keys:
             self.comparison_traceback.append(
                 cc.FAIL
-                + "Missing output fields from running code: %s"
-                % (ref_keys - test_keys)
+                + "Missing output fields from running code: %s" % (ref_keys - test_keys)
                 + cc.ENDC
             )
             return False
         elif test_keys - ref_keys:
             self.comparison_traceback.append(
                 cc.FAIL
-                + "Unexpected output fields from running code: %s"
-                % (test_keys - ref_keys)
+                + "Unexpected output fields from running code: %s" % (test_keys - ref_keys)
                 + cc.ENDC
             )
             return False
@@ -459,15 +459,11 @@ class IPyNbCell(pytest.Item):
                 for val in ref_values:
                     self.comparison_traceback.append(_trim_base64(val))
                 self.comparison_traceback.append(
-                    cc.FAIL
-                    + '============ disagrees with newly computed (test) output:'
-                    + cc.ENDC)
+                    cc.FAIL + "============ disagrees with newly computed (test) output:" + cc.ENDC
+                )
                 for val in test_values:
                     self.comparison_traceback.append(_trim_base64(val))
-                self.comparison_traceback.append(
-                    cc.FAIL
-                    + '>>>>>>>>>>>>'
-                    + cc.ENDC)
+                self.comparison_traceback.append(cc.FAIL + ">>>>>>>>>>>>" + cc.ENDC)
                 return False
 
             for ref_out, test_out in zip(ref_values, test_values):
@@ -486,36 +482,32 @@ class IPyNbCell(pytest.Item):
 
         cc = self.colors
 
-        self.comparison_traceback.append(
-            cc.OKBLUE
-            + " mismatch '%s'" % key
-            + cc.FAIL)
+        self.comparison_traceback.append(cc.OKBLUE + " mismatch '%s'" % key + cc.FAIL)
 
         # Use comparison repr from pytest:
         hook_result = self.ihook.pytest_assertrepr_compare(
-            config=self.config, op='==', left=left, right=right)
+            config=self.config, op="==", left=left, right=right
+        )
         for new_expl in hook_result:
             if new_expl:
-                new_expl = ['  %s' % line.replace("\n", "\\n") for line in new_expl]
-                self.comparison_traceback.append("\n assert reference_output == test_output failed:\n")
+                new_expl = ["  %s" % line.replace("\n", "\\n") for line in new_expl]
+                self.comparison_traceback.append(
+                    "\n assert reference_output == test_output failed:\n"
+                )
                 self.comparison_traceback.extend(new_expl)
                 break
         else:
             # Fallback repr:
             self.comparison_traceback.append(
-                "  <<<<<<<<<<<< Reference output from ipynb file:"
-                + cc.ENDC)
+                "  <<<<<<<<<<<< Reference output from ipynb file:" + cc.ENDC
+            )
             self.comparison_traceback.append(_indent(left))
             self.comparison_traceback.append(
-                cc.FAIL
-                + '  ============ disagrees with newly computed (test) output:'
-                + cc.ENDC)
+                cc.FAIL + "  ============ disagrees with newly computed (test) output:" + cc.ENDC
+            )
             self.comparison_traceback.append(_indent(right))
-            self.comparison_traceback.append(
-                cc.FAIL
-                + '  >>>>>>>>>>>>')
+            self.comparison_traceback.append(cc.FAIL + "  >>>>>>>>>>>>")
         self.comparison_traceback.append(cc.ENDC)
-
 
     """ *****************************************************
         ***************************************************** """
@@ -524,15 +516,12 @@ class IPyNbCell(pytest.Item):
         if self.parent.timed_out:
             # xfail(condition, reason=None, run=True, raises=None, strict=False)
             xfail_mark = pytest.mark.xfail(
-                True,
-                reason='Previous cell timed out, expected cell to fail'
+                True, reason="Previous cell timed out, expected cell to fail"
             )
             self.add_marker(xfail_mark)
 
-
     def raise_cell_error(self, message, *args, **kwargs):
         raise NbCellError(self.cell_num, message, self.cell.source, *args, **kwargs)
-
 
     def runtest(self):
         """
@@ -545,7 +534,7 @@ class IPyNbCell(pytest.Item):
 
         """
         # Simply skip cell if configured to
-        if self.options['skip']:
+        if self.options["skip"]:
             pytest.skip()
 
         kernel = self.parent.kernel
@@ -554,8 +543,7 @@ class IPyNbCell(pytest.Item):
 
         # Execute the code in the current cell in the kernel. Returns the
         # message id of the corresponding response from iopub.
-        msg_id = kernel.execute_cell_input(
-            self.cell.source, allow_stdin=False)
+        msg_id = kernel.execute_cell_input(self.cell.source, allow_stdin=False)
 
         # Timeout for the cell execution
         # after code is sent for execution, the kernel sends a message on
@@ -595,34 +583,30 @@ class IPyNbCell(pytest.Item):
                     self.raise_cell_error(
                         "Timeout of %g seconds exceeded while executing cell."
                         " Failed to interrupt kernel in %d seconds, so "
-                        "failing without traceback." %
-                            (timeout, self.output_timeout),
+                        "failing without traceback." % (timeout, self.output_timeout),
                     )
                 else:
                     self.parent.timed_out = True
                     self.raise_cell_error(
-                        "Timeout of %d seconds exceeded waiting for output." %
-                            self.output_timeout,
+                        "Timeout of %d seconds exceeded waiting for output." % self.output_timeout,
                     )
-
-
 
             # now we must handle the message by checking the type and reply
             # info and we store the output of the cell in a notebook node object
-            msg_type = msg['msg_type']
-            reply = msg['content']
+            msg_type = msg["msg_type"]
+            reply = msg["content"]
             out = NotebookNode(output_type=msg_type)
 
             # Is the iopub message related to this cell execution?
-            if msg['parent_header'].get('msg_id') != msg_id:
+            if msg["parent_header"].get("msg_id") != msg_id:
                 continue
 
             # When the kernel starts to execute code, it will enter the 'busy'
             # state and when it finishes, it will enter the 'idle' state.
             # The kernel will publish state 'starting' exactly
             # once at process startup.
-            if msg_type == 'status':
-                if reply['execution_state'] == 'idle':
+            if msg_type == "status":
+                if reply["execution_state"] == "idle":
                     break
                 else:
                     continue
@@ -631,13 +615,13 @@ class IPyNbCell(pytest.Item):
             # being executed at any given time, these messages contain a
             # re-broadcast of the code portion of an execute_request,
             # along with the execution_count.
-            elif msg_type == 'execute_input':
+            elif msg_type == "execute_input":
                 continue
 
             # com? execute reply?
-            elif msg_type.startswith('comm'):
+            elif msg_type.startswith("comm"):
                 continue
-            elif msg_type == 'execute_reply':
+            elif msg_type == "execute_reply":
                 continue
 
             # This message type is used to clear the output that is
@@ -645,7 +629,6 @@ class IPyNbCell(pytest.Item):
             # elif msg_type == 'clear_output':
             #     outs = []
             #     continue
-
 
             # elif (msg_type == 'clear_output'
             #       and msg_type['execution_state'] == 'idle'):
@@ -667,40 +650,38 @@ class IPyNbCell(pytest.Item):
             # as height and width of the image (CHECK the documentation)
             # Thus we iterate through the keys (mimes) 'data' sub-dictionary
             # to obtain the 'text' and 'image/png' information
-            elif msg_type in ('display_data', 'execute_result'):
-                out['metadata'] = reply['metadata']
-                out['data'] = reply['data']
+            elif msg_type in ("display_data", "execute_result"):
+                out["metadata"] = reply["metadata"]
+                out["data"] = reply["data"]
                 outs.append(out)
 
-                if msg_type == 'execute_result':
-                    out.execution_count = reply['execution_count']
-
+                if msg_type == "execute_result":
+                    out.execution_count = reply["execution_count"]
 
             # if the message is a stream then we store the output
-            elif msg_type == 'stream':
-                out.name = reply['name']
-                out.text = reply['text']
+            elif msg_type == "stream":
+                out.name = reply["name"]
+                out.text = reply["text"]
                 outs.append(out)
-
 
             # if the message type is an error then an error has occurred during
             # cell execution. Therefore raise a cell error and pass the
             # traceback information.
-            elif msg_type == 'error':
+            elif msg_type == "error":
                 # Store error in output first
-                out['ename'] = reply['ename']
-                out['evalue'] = reply['evalue']
-                out['traceback'] = reply['traceback']
+                out["ename"] = reply["ename"]
+                out["evalue"] = reply["evalue"]
+                out["traceback"] = reply["traceback"]
                 outs.append(out)
-                if not self.options['check_exception']:
+                if not self.options["check_exception"]:
                     # Ensure we flush iopub before raising error
                     try:
                         self.parent.kernel.await_idle(msg_id, self.output_timeout)
                     except Empty:
                         self.stop()
-                        raise RuntimeError('Timed out waiting for idle kernel!')
-                    traceback = '\n' + '\n'.join(reply['traceback'])
-                    if out['ename'] == 'KeyboardInterrupt' and self.parent.timed_out:
+                        raise RuntimeError("Timed out waiting for idle kernel!")
+                    traceback = "\n" + "\n".join(reply["traceback"])
+                    if out["ename"] == "KeyboardInterrupt" and self.parent.timed_out:
                         msg = "Timeout of %g seconds exceeded executing cell" % timeout
                     else:
                         msg = "Cell execution caused an exception"
@@ -714,9 +695,9 @@ class IPyNbCell(pytest.Item):
         outs[:] = coalesce_streams(outs)
 
         # Cells where the reference is not run, will not check outputs:
-        #unrun = self.cell.execution_count is None
-        #if unrun and self.cell.outputs:
-            #self.raise_cell_error('Unrun reference cell has outputs')
+        # unrun = self.cell.execution_count is None
+        # if unrun and self.cell.outputs:
+        # self.raise_cell_error('Unrun reference cell has outputs')
 
         # Compare if the outputs have the same number of lines
         # and throw an error if it fails
@@ -724,7 +705,7 @@ class IPyNbCell(pytest.Item):
         #     self.diff_number_outputs(outs, self.cell.outputs)
         #     failed = True
         failed = False
-        if self.options['check'] and not unrun:
+        if self.options["check"] and not unrun:
             if not self.compare_outputs(outs, coalesce_streams(self.cell.outputs)):
                 failed = True
 
@@ -735,18 +716,22 @@ class IPyNbCell(pytest.Item):
             self.raise_cell_error(
                 "Cell outputs differ",
                 # Here we must put the traceback output:
-                '\n'.join(self.comparison_traceback),
+                "\n".join(self.comparison_traceback),
             )
 
-
-    def sanitize_outputs(self, outputs, skip_sanitize=('metadata',
-                                                       'traceback',
-                                                       'text/latex',
-                                                       'prompt_number',
-                                                       'output_type',
-                                                       'name',
-                                                       'execution_count'
-                                                       )):
+    def sanitize_outputs(
+        self,
+        outputs,
+        skip_sanitize=(
+            "metadata",
+            "traceback",
+            "text/latex",
+            "prompt_number",
+            "output_type",
+            "name",
+            "execution_count",
+        ),
+    ):
         sanitized_outputs = []
         for output in outputs:
             sanitized = {}
@@ -754,7 +739,7 @@ class IPyNbCell(pytest.Item):
                 if key in skip_sanitize:
                     sanitized[key] = output[key]
                 else:
-                    if key == 'data':
+                    if key == "data":
                         sanitized[key] = {}
                         for data_key in output[key].keys():
                             # Filter the keys in the SUB-dictionary again
@@ -789,8 +774,8 @@ class IPyNbCell(pytest.Item):
         return s
 
 
-carriagereturn_pat = re.compile(r'.*\r(?=[^\n])')
-backspace_pat = re.compile(r'[^\n]\b')
+carriagereturn_pat = re.compile(r".*\r(?=[^\n])")
+backspace_pat = re.compile(r"[^\n]\b")
 
 
 def coalesce_streams(outputs):
@@ -809,7 +794,7 @@ def coalesce_streams(outputs):
     new_outputs = []
     streams = {}
     for output in outputs:
-        if (output.output_type == 'stream'):
+        if output.output_type == "stream":
             if output.name in streams:
                 streams[output.name].text += output.text
             else:
@@ -824,9 +809,9 @@ def coalesce_streams(outputs):
         while len(output.text) < len(old):
             old = output.text
             # Cancel out anything-but-newline followed by backspace
-            output.text = backspace_pat.sub('', output.text)
+            output.text = backspace_pat.sub("", output.text)
         # Replace all carriage returns not followed by newline
-        output.text = carriagereturn_pat.sub('', output.text)
+        output.text = carriagereturn_pat.sub("", output.text)
 
     return new_outputs
 
@@ -835,12 +820,11 @@ def transform_streams_for_comparison(outputs):
     """Makes failure output for streams better by having key be the stream name"""
     new_outputs = []
     for output in outputs:
-        if (output.output_type == 'stream'):
+        if output.output_type == "stream":
             # Transform output
-            new_outputs.append({
-                'output_type': 'stream',
-                output.name: output.text,
-            })
+            new_outputs.append(
+                {"output_type": "stream", output.name: output.text,}
+            )
         else:
             new_outputs.append(output)
     return new_outputs
@@ -859,27 +843,28 @@ def get_sanitize_patterns(string):
 
     A list of (regex, replace) pairs.
     """
-    return re.findall('^regex: (.*)$\n^replace: (.*)$',
-                      string,
-                      flags=re.MULTILINE)
+    return re.findall("^regex: (.*)$\n^replace: (.*)$", string, flags=re.MULTILINE)
 
 
 def hash_string(s):
     return hashlib.md5(s.encode("utf8")).hexdigest()
 
-_base64 = re.compile(r'^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$', re.MULTILINE | re.UNICODE)
+
+_base64 = re.compile(
+    r"^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$", re.MULTILINE | re.UNICODE
+)
 
 
 def _trim_base64(s):
     """Trim and hash base64 strings"""
-    if len(s) > 64 and _base64.match(s.replace('\n', '')):
+    if len(s) > 64 and _base64.match(s.replace("\n", "")):
         h = hash_string(s)
-        s = '%s...<snip base64, md5=%s...>' % (s[:8], h[:16])
+        s = "%s...<snip base64, md5=%s...>" % (s[:8], h[:16])
     return s
 
 
-def _indent(s, indent='  '):
+def _indent(s, indent="  "):
     """Intent each line with indent"""
     if isinstance(s, six.string_types):
-        return '\n'.join(('%s%s' % (indent, line) for line in s.splitlines()))
+        return "\n".join(("%s%s" % (indent, line) for line in s.splitlines()))
     return s

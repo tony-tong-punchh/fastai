@@ -7,4 +7,3 @@ for fname in glob.glob("*.ipynb"):
     with open(fname) as f:
         nb = nbformat.read(f, as_version=4)
         nbformat.sign.NotebookNotary().sign(nb)
-

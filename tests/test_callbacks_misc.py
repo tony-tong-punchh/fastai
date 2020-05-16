@@ -4,11 +4,12 @@ from fastai.gen_doc.doctest import this_tests
 from utils.fakes import *
 from utils.text import CaptureStdout
 
+
 def stop_after_n_batches_run_n_check(learn, bs, run_n_batches_exp):
-    has_batches = len(learn.data.train_ds)//bs
+    has_batches = len(learn.data.train_ds) // bs
     with CaptureStdout() as cs:
         learn.fit_one_cycle(3, max_lr=1e-2)
-    for s in ['train_loss', 'valid_loss']:
+    for s in ["train_loss", "valid_loss"]:
         assert s in cs.out, f"expecting '{s}' in \n{cs.out}"
 
     # test that epochs are stopped at epoch 0
@@ -17,7 +18,10 @@ def stop_after_n_batches_run_n_check(learn, bs, run_n_batches_exp):
 
     # test that only run_n_batches_exp batches were run
     run_n_batches_got = len(learn.recorder.losses)
-    assert run_n_batches_got == run_n_batches_exp, f"should have run only {run_n_batches_exp}, but got {run_n_batches_got}"
+    assert (
+        run_n_batches_got == run_n_batches_exp
+    ), f"should have run only {run_n_batches_exp}, but got {run_n_batches_got}"
+
 
 def test_stop_after_n_batches():
     this_tests(StopAfterNBatches)

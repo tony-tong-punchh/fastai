@@ -3,11 +3,12 @@ from fastai.structured import proc_df
 import pandas as pd
 import numpy as np
 
-def test_proc_df_fix_missing():
-    y_col = 'target'
 
-    df_train = pd.DataFrame({'col1' : [1, np.NaN, 3], 'col2' : [5, 2, 2], 'target': [1, 0, 1]})
-    df_test = pd.DataFrame({'col1' : [1, 2, np.NaN], 'col2' : [5, np.NaN, 2]})
+def test_proc_df_fix_missing():
+    y_col = "target"
+
+    df_train = pd.DataFrame({"col1": [1, np.NaN, 3], "col2": [5, 2, 2], "target": [1, 0, 1]})
+    df_test = pd.DataFrame({"col1": [1, 2, np.NaN], "col2": [5, np.NaN, 2]})
 
     # Assume test is the same as train but without target column
     assert len(set(df_train.columns) - set([y_col])) == len(set(df_test.columns))

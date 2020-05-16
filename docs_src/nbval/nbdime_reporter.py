@@ -7,8 +7,13 @@ Authors: V.T. Fauske
 
 # import the pytest API
 import pytest
-from _pytest.main import EXIT_OK, EXIT_TESTSFAILED, EXIT_INTERRUPTED, \
-    EXIT_USAGEERROR, EXIT_NOTESTSCOLLECTED
+from _pytest.main import (
+    EXIT_OK,
+    EXIT_TESTSFAILED,
+    EXIT_INTERRUPTED,
+    EXIT_USAGEERROR,
+    EXIT_NOTESTSCOLLECTED,
+)
 
 import re
 import copy
@@ -23,9 +28,9 @@ from nbdime.webapp.nbdiffweb import run_server, browse
 
 from .plugin import IPyNbCell, bcolors
 
-nbdime.log.set_nbdime_log_level('ERROR')
+nbdime.log.set_nbdime_log_level("ERROR")
 
-_re_nbval_nodeid = re.compile('.*\.ipynb::Cell \d+')
+_re_nbval_nodeid = re.compile(".*\.ipynb::Cell \d+")
 
 
 class NbdimeReporter:
@@ -57,7 +62,6 @@ class NbdimeReporter:
         self.nbval_items.extend(items)
         self._numcollected += len(items)
 
-
     # ---- Code below writes up report ----
 
     @pytest.hookimpl(hookwrapper=True)
@@ -67,8 +71,12 @@ class NbdimeReporter:
         outcome = yield
         outcome.get_result()
         summary_exit_codes = (
-            EXIT_OK, EXIT_TESTSFAILED, EXIT_INTERRUPTED, EXIT_USAGEERROR,
-            EXIT_NOTESTSCOLLECTED)
+            EXIT_OK,
+            EXIT_TESTSFAILED,
+            EXIT_INTERRUPTED,
+            EXIT_USAGEERROR,
+            EXIT_NOTESTSCOLLECTED,
+        )
         if exitstatus in summary_exit_codes:
             # We had some failures that might need reporting
             self.make_report(outcome)
@@ -79,7 +87,7 @@ class NbdimeReporter:
         Use nbdime diff-web to present the difference between reference
         cells and test cells.
         """
-        failures = self.getreports('failed')
+        failures = self.getreports("failed")
         if not failures:
             return
         for rep in failures:
@@ -91,18 +99,18 @@ class NbdimeReporter:
             self._outrep_summary(rep)
         tmpdir = tempfile.mkdtemp()
         try:
-            ref_file = os.path.join(tmpdir, 'reference.ipynb')
-            test_file = os.path.join(tmpdir, 'test_result.ipynb')
+            ref_file = os.path.join(tmpdir, "reference.ipynb")
+            test_file = os.path.join(tmpdir, "test_result.ipynb")
             with io.open(ref_file, "w", encoding="utf8") as f:
                 nbformat.write(self.nb_ref, f)
             with io.open(test_file, "w", encoding="utf8") as f:
                 nbformat.write(self.nb_test, f)
             run_server(
-                port=0,     # Run on random port
+                port=0,  # Run on random port
                 cwd=tmpdir,
                 closable=True,
-                on_port=lambda port: browse(
-                    port, ref_file, test_file, None))
+                on_port=lambda port: browse(port, ref_file, test_file, None),
+            )
         finally:
             shutil.rmtree(tmpdir)
 
@@ -112,7 +120,7 @@ class NbdimeReporter:
     def getreports(self, name):
         l = []
         for x in self.stats.get(name, []):
-            if not hasattr(x, '_pdbshown'):
+            if not hasattr(x, "_pdbshown"):
                 l.append(x)
         return l
 
@@ -120,8 +128,8 @@ class NbdimeReporter:
         # Create markdown cell with title
         source = "## " + title
         if details:
-            details = details.replace(bcolors.OKBLUE, '')
-            source += "\n\n**" + details + '**'
+            details = details.replace(bcolors.OKBLUE, "")
+            source += "\n\n**" + details + "**"
         header = nbformat.v4.new_markdown_cell(source)
         # Add markdown in both ref and test
         self.nb_ref.cells.append(header)
@@ -142,7 +150,7 @@ class NbdimeReporter:
                 self.nb_test.cells.append(test_cell)
 
     def _getfailureheadline(self, rep):
-        if hasattr(rep, 'location'):
+        if hasattr(rep, "location"):
             domain = rep.location[2]
             return domain
         else:

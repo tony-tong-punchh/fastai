@@ -5,8 +5,9 @@ from .forget_mult import ForgetMult
 
 
 ##Adapted from the code here https://github.com/salesforce/pytorch-qrnn, implementation of the QRNN by
-##Bradbury, James and Merity, Stephen and Xiong, Caiming and Socher, Richard 
+##Bradbury, James and Merity, Stephen and Xiong, Caiming and Socher, Richard
 ##https://arxiv.org/abs/1611.01576
+
 
 class QRNNLayer(nn.Module):
     r"""Applies a single layer Quasi-Recurrent Neural Network (QRNN) to an input sequence.
@@ -29,10 +30,22 @@ class QRNNLayer(nn.Module):
         - h_n (batch, hidden_size): tensor containing the hidden state for t=seq_len
     """
 
-    def __init__(self, input_size, hidden_size=None, save_prev_x=False, zoneout=0, window=1, output_gate=True, use_cuda=True):
+    def __init__(
+        self,
+        input_size,
+        hidden_size=None,
+        save_prev_x=False,
+        zoneout=0,
+        window=1,
+        output_gate=True,
+        use_cuda=True,
+    ):
         super(QRNNLayer, self).__init__()
 
-        assert window in [1, 2], "This QRNN implementation currently only handles convolutional window of size 1 or size 2"
+        assert window in [
+            1,
+            2,
+        ], "This QRNN implementation currently only handles convolutional window of size 1 or size 2"
         self.window = window
         self.input_size = input_size
         self.hidden_size = hidden_size if hidden_size else input_size
@@ -43,7 +56,10 @@ class QRNNLayer(nn.Module):
         self.use_cuda = use_cuda
 
         # One large matmul with concat is faster than N small matmuls and no concat
-        self.linear = nn.Linear(self.window * self.input_size, 3 * self.hidden_size if self.output_gate else 2 * self.hidden_size)
+        self.linear = nn.Linear(
+            self.window * self.input_size,
+            3 * self.hidden_size if self.output_gate else 2 * self.hidden_size,
+        )
 
     def reset(self):
         # If you are saving the previous value of x, you should call this when starting with a new state
@@ -83,7 +99,9 @@ class QRNNLayer(nn.Module):
         # If an element of F is zero, that means the corresponding neuron keeps the old value
         if self.zoneout:
             if self.training:
-                mask = Variable(F.data.new(*F.size()).bernoulli_(1 - self.zoneout), requires_grad=False)
+                mask = Variable(
+                    F.data.new(*F.size()).bernoulli_(1 - self.zoneout), requires_grad=False
+                )
                 F = F * mask
             else:
                 F *= 1 - self.zoneout
@@ -134,16 +152,32 @@ class QRNN(torch.nn.Module):
         - h_n (layers, batch, hidden_size): tensor containing the hidden state for t=seq_len
     """
 
-    def __init__(self, input_size, hidden_size,
-                 num_layers=1, bias=True, batch_first=False,
-                 dropout=0, bidirectional=False, layers=None, **kwargs):
-        assert bidirectional == False, 'Bidirectional QRNN is not yet supported'
-        assert batch_first == False, 'Batch first mode is not yet supported'
-        assert bias == True, 'Removing underlying bias is not yet supported'
+    def __init__(
+        self,
+        input_size,
+        hidden_size,
+        num_layers=1,
+        bias=True,
+        batch_first=False,
+        dropout=0,
+        bidirectional=False,
+        layers=None,
+        **kwargs,
+    ):
+        assert bidirectional == False, "Bidirectional QRNN is not yet supported"
+        assert batch_first == False, "Batch first mode is not yet supported"
+        assert bias == True, "Removing underlying bias is not yet supported"
 
         super(QRNN, self).__init__()
 
-        self.layers = torch.nn.ModuleList(layers if layers else [QRNNLayer(input_size if l == 0 else hidden_size, hidden_size, **kwargs) for l in range(num_layers)])
+        self.layers = torch.nn.ModuleList(
+            layers
+            if layers
+            else [
+                QRNNLayer(input_size if l == 0 else hidden_size, hidden_size, **kwargs)
+                for l in range(num_layers)
+            ]
+        )
 
         self.input_size = input_size
         self.hidden_size = hidden_size
@@ -154,7 +188,7 @@ class QRNN(torch.nn.Module):
         self.bidirectional = bidirectional
 
     def reset(self):
-        r'''If your convolutional window is greater than 1, you must reset at the beginning of each new sequence'''
+        r"""If your convolutional window is greater than 1, you must reset at the beginning of each new sequence"""
         [layer.reset() for layer in self.layers]
 
     def forward(self, input, hidden=None):
@@ -165,7 +199,9 @@ class QRNN(torch.nn.Module):
             next_hidden.append(hn)
 
             if self.dropout != 0 and i < len(self.layers) - 1:
-                input = torch.nn.functional.dropout(input, p=self.dropout, training=self.training, inplace=False)
+                input = torch.nn.functional.dropout(
+                    input, p=self.dropout, training=self.training, inplace=False
+                )
 
         next_hidden = torch.cat(next_hidden, 0).view(self.num_layers, *next_hidden[0].size()[-2:])
 

@@ -20,9 +20,9 @@ from jupyter_client.kernelspec import KernelSpecManager
 import ipykernel.kernelspec
 
 
-CURRENT_ENV_KERNEL_NAME = ':nbval-parent-env'
+CURRENT_ENV_KERNEL_NAME = ":nbval-parent-env"
 
-logger = logging.getLogger('nbval')
+logger = logging.getLogger("nbval")
 # Uncomment to debug kernel communication:
 # logger.setLevel('DEBUG')
 # logging.basicConfig(format="[%(asctime)s - %(name)s - %(levelname)s] %(message)s")
@@ -40,16 +40,16 @@ class NbvalKernelspecManager(KernelSpecManager):
         if kernel_name == CURRENT_ENV_KERNEL_NAME:
             return self.kernel_spec_class(
                 resource_dir=ipykernel.kernelspec.RESOURCES,
-                **ipykernel.kernelspec.get_kernel_dict())
+                **ipykernel.kernelspec.get_kernel_dict(),
+            )
         else:
             return super(NbvalKernelspecManager, self).get_kernel_spec(kernel_name)
 
 
-def start_new_kernel(startup_timeout=60, kernel_name='python', **kwargs):
+def start_new_kernel(startup_timeout=60, kernel_name="python", **kwargs):
     """Start a new kernel, and return its Manager and Client"""
     logger.debug('Starting new kernel: "%s"' % kernel_name)
-    km = KernelManager(kernel_name=kernel_name,
-                       kernel_spec_manager=NbvalKernelspecManager())
+    km = KernelManager(kernel_name=kernel_name, kernel_spec_manager=NbvalKernelspecManager())
     km.start_kernel(**kwargs)
     kc = km.client()
     kc.start_channels()
@@ -75,6 +75,7 @@ class RunningKernel(object):
     this class.
 
     """
+
     def __init__(self, kernel_name, cwd=None):
         """
         Initialise a new kernel
@@ -83,9 +84,7 @@ class RunningKernel(object):
         """
 
         self.km, self.kc = start_new_kernel(
-            kernel_name=kernel_name,
-            stderr=open(os.devnull, 'w'),
-            cwd=cwd,
+            kernel_name=kernel_name, stderr=open(os.devnull, "w"), cwd=cwd,
         )
 
         self._ensure_iopub_up()
@@ -100,7 +99,7 @@ class RunningKernel(object):
             try:
                 self.await_reply(msg_id, timeout=shell_timeout)
             except Empty:
-                raise RuntimeError('Kernel info reqest timed out after %d seconds!' % shell_timeout)
+                raise RuntimeError("Kernel info reqest timed out after %d seconds!" % shell_timeout)
 
             try:
                 self.await_idle(msg_id, individual_timeout)
@@ -119,14 +118,14 @@ class RunningKernel(object):
         When timeout is reached
         """
         try:
-            if stream == 'iopub':
+            if stream == "iopub":
                 msg = self.kc.get_iopub_msg(timeout=timeout)
-            elif stream == 'shell':
+            elif stream == "shell":
                 msg = self.kc.get_shell_msg(timeout=timeout)
             else:
                 raise ValueError('Invalid stream specified: "%s"' % stream)
         except Empty:
-            logger.debug('Kernel: Timeout waiting for message on %s', stream)
+            logger.debug("Kernel: Timeout waiting for message on %s", stream)
             raise
         logger.debug("Kernel message (%s):\n%s", stream, pformat(msg))
         return msg
@@ -143,7 +142,7 @@ class RunningKernel(object):
         if cell_input:
             logger.debug('Executing cell: "%s"...', cell_input.splitlines()[0][:40])
         else:
-            logger.debug('Executing empty cell')
+            logger.debug("Executing empty cell")
         return self.kc.execute(cell_input, allow_stdin=allow_stdin, stop_on_error=False)
 
     def await_reply(self, msg_id, timeout=None):
@@ -154,29 +153,29 @@ class RunningKernel(object):
            a `Queue.Empty` exception will be raised.
         """
         while True:
-            msg = self.get_message(stream='shell', timeout=timeout)
+            msg = self.get_message(stream="shell", timeout=timeout)
 
             # Is this the message we are waiting for?
-            if msg['parent_header'].get('msg_id') == msg_id:
-                if msg['content']['status'] == 'aborted':
+            if msg["parent_header"].get("msg_id") == msg_id:
+                if msg["content"]["status"] == "aborted":
                     # This should not occur!
-                    raise RuntimeError('Kernel aborted execution request')
+                    raise RuntimeError("Kernel aborted execution request")
                 return
 
     def await_idle(self, parent_id, timeout):
         """Poll the iopub stream until an idle message is received for the given parent ID"""
         while True:
             # Get a message from the kernel iopub channel
-            msg = self.get_message(timeout=timeout, stream='iopub') # raises Empty on timeout!
+            msg = self.get_message(timeout=timeout, stream="iopub")  # raises Empty on timeout!
 
-            if msg['parent_header'].get('msg_id') != parent_id:
+            if msg["parent_header"].get("msg_id") != parent_id:
                 continue
-            if msg['msg_type'] == 'status':
-                if msg['content']['execution_state'] == 'idle':
+            if msg["msg_type"] == "status":
+                if msg["content"]["execution_state"] == "idle":
                     break
 
     def is_alive(self):
-        if hasattr(self, 'km'):
+        if hasattr(self, "km"):
             return self.km.is_alive()
         return False
 
@@ -186,7 +185,7 @@ class RunningKernel(object):
         """
         Instructs the kernel manager to restart the kernel process now.
         """
-        logger.debug('Restarting kernel')
+        logger.debug("Restarting kernel")
         self.km.restart_kernel(now=True)
 
     def interrupt(self):
@@ -194,7 +193,7 @@ class RunningKernel(object):
         Instructs the kernel to stop whatever it is doing, and await
         further commands.
         """
-        logger.debug('Interrupting kernel')
+        logger.debug("Interrupting kernel")
         self.km.interrupt_kernel()
 
     def stop(self):
@@ -202,7 +201,7 @@ class RunningKernel(object):
         Instructs the kernel process to stop channels
         and the kernel manager to then shutdown the process.
         """
-        logger.debug('Stopping kernel')
+        logger.debug("Stopping kernel")
         self.kc.stop_channels()
         self.km.shutdown_kernel(now=True)
         del self.km

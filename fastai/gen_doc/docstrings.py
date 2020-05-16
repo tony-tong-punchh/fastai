@@ -17,14 +17,18 @@
 import re
 import sys
 
-__all__ = ['parse_docstring']
+__all__ = ["parse_docstring"]
 
 
-FIELDS = 'param|val' # supported fields
+FIELDS = "param|val"  # supported fields
 PARAM_OR_RETURN_REGEX = re.compile(f":(?:{FIELDS}|return)")
 RETURN_REGEX = re.compile(":return: (?P<doc>.*)", re.S)
-NEW_REGEX = re.compile(f":(?P<field>{FIELDS}) (?P<name>[\*\w]+): (?P<doc>.*?)"
-                         f"(?:(?=:(?:{FIELDS}|return|raises))|\Z)", re.S)
+NEW_REGEX = re.compile(
+    f":(?P<field>{FIELDS}) (?P<name>[\*\w]+): (?P<doc>.*?)"
+    f"(?:(?=:(?:{FIELDS}|return|raises))|\Z)",
+    re.S,
+)
+
 
 def trim(docstring):
     """trim function from PEP-257"""
@@ -105,18 +109,17 @@ def parse_docstring(docstring):
                 match = RETURN_REGEX.search(params_return_desc)
                 if match:
                     return_str = reindent(match.group("doc"))
-    comments = {p['name']: p['doc'] for p in args}
+    comments = {p["name"]: p["doc"] for p in args}
     return {
         "short_description": short_description,
         "long_description": long_description,
         "args": args,
         "comments": comments,
-        "return": return_str
+        "return": return_str,
     }
 
 
 class InfoMixin(object):
-
     @classmethod
     def _get_doc(cls):
         """Return documentary of class
@@ -138,5 +141,5 @@ class InfoMixin(object):
             "description": doc["long_description"],
             "parameters": doc["params"],
             "schema": getattr(cls, "CONFIG_SCHEMA", None),
-            "return": doc["return"]
+            "return": doc["return"],
         }

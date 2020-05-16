@@ -13,14 +13,16 @@ from io import StringIO
 # final message
 # it can handle a single string or a multiline buffer
 def apply_print_resets(buf):
-    return re.sub(r'^.*\r', '', buf, 0, re.M)
+    return re.sub(r"^.*\r", "", buf, 0, re.M)
+
 
 def assert_screenout(out, what):
     out_pr = apply_print_resets(out).lower()
     match_str = out_pr.find(what.lower())
     assert match_str != -1, f"expecting to find {what} in output: f{out_pr}"
 
-class CaptureStd():
+
+class CaptureStd:
     """ Context manager to capture:
     stdout, clean it up and make it available via obj.out
     stderr, and make it available via obj.err
@@ -47,20 +49,21 @@ class CaptureStd():
     # but best use the stream-specific subclasses
 
     """
+
     def __init__(self, out=True, err=True):
         if out:
             self.out_buf = StringIO()
-            self.out = 'error: CaptureStd context is unfinished yet, called too early'
+            self.out = "error: CaptureStd context is unfinished yet, called too early"
         else:
             self.out_buf = None
-            self.out = 'not capturing stdout'
+            self.out = "not capturing stdout"
 
         if err:
             self.err_buf = StringIO()
-            self.err = 'error: CaptureStd context is unfinished yet, called too early'
+            self.err = "error: CaptureStd context is unfinished yet, called too early"
         else:
             self.err_buf = None
-            self.err = 'not capturing stderr'
+            self.err = "not capturing stderr"
 
     def __enter__(self):
         if self.out_buf:
@@ -83,22 +86,29 @@ class CaptureStd():
             self.err = self.err_buf.getvalue()
 
     def __repr__(self):
-        msg = ''
-        if self.out_buf: msg += f"stdout: {self.out}\n"
-        if self.err_buf: msg += f"stderr: {self.err}\n"
+        msg = ""
+        if self.out_buf:
+            msg += f"stdout: {self.out}\n"
+        if self.err_buf:
+            msg += f"stderr: {self.err}\n"
         return msg
+
 
 # in tests it's the best to capture only the stream that's wanted, otherwise
 # it's easy to miss things, so unless you need to capture both streams, use the
 # subclasses below (less typing). Or alternatively, configure `CaptureStd` to
 # disable the stream you don't need to test.
 
+
 class CaptureStdout(CaptureStd):
     """ Same as CaptureStd but captures only stdout """
+
     def __init__(self):
         super().__init__(err=False)
 
+
 class CaptureStderr(CaptureStd):
     """ Same as CaptureStd but captures only stderr """
+
     def __init__(self):
         super().__init__(out=False)

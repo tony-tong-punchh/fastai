@@ -27,22 +27,40 @@ from pandas import Series, DataFrame
 from io import BufferedWriter, BytesIO
 
 import pkg_resources
+
 pkg_resources.require("fastprogress>=0.2.1")
 from fastprogress.fastprogress import master_bar, progress_bar
 
-#for type annotations
+# for type annotations
 from numbers import Number
-from typing import Any, AnyStr, Callable, Collection, Dict, Hashable, Iterator, List, Mapping, NewType, Optional
+from typing import (
+    Any,
+    AnyStr,
+    Callable,
+    Collection,
+    Dict,
+    Hashable,
+    Iterator,
+    List,
+    Mapping,
+    NewType,
+    Optional,
+)
 from typing import Sequence, Tuple, TypeVar, Union
 from types import SimpleNamespace
 
-def pd_max_colwidth(): return None if pd.__version__ >= "1.0.0" else -1
+
+def pd_max_colwidth():
+    return None if pd.__version__ >= "1.0.0" else -1
 
 
 def try_import(module):
     "Try to import `module`. Returns module's object on success, None on failure"
-    try: return importlib.import_module(module)
-    except: return None
+    try:
+        return importlib.import_module(module)
+    except:
+        return None
+
 
 def have_min_pkg_version(package, version):
     "Check whether we have at least `version` of `package`. Returns True on success, False otherwise."
