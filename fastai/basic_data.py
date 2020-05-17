@@ -56,7 +56,7 @@ DataLoader.__setstate__ = DataLoader___setstate__
 
 @dataclass
 class DeviceDataLoader:
-    "Bind a `DataLoader` to a `torch.device`."
+    """Bind a `DataLoader` to a `torch.device`."""
     dl: DataLoader
     device: torch.device
     tfms: List[Callable] = None
@@ -147,7 +147,7 @@ class DeviceDataLoader:
 
 
 class DataBunch:
-    "Bind `train_dl`,`valid_dl` and `test_dl` in a data object."
+    """Bind `train_dl`,`valid_dl` and `test_dl` in a data object."""
 
     def __init__(
         self,

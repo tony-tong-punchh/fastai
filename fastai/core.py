@@ -513,8 +513,8 @@ def text2html_table(items: Collection[Collection[str]]) -> str:
     return html_code
 
 
-def parallel(func, arr: Collection, max_workers: int = None, leave=False):
-    "Call `func` on every element of `arr` in parallel using `max_workers`."
+def parallel(func: Callable, arr: Collection, max_workers: int = None, leave=False):
+    """Call `func` on every element of `arr` in parallel using `max_workers`."""
     max_workers = ifnone(max_workers, defaults.cpus)
     if max_workers < 2:
         results = [func(o, i) for i, o in progress_bar(enumerate(arr), total=len(arr), leave=leave)]
