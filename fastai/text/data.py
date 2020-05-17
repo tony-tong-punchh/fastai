@@ -163,9 +163,10 @@ class LanguageModelPreLoader(Callback):
 
 
 class SortSampler(Sampler):
-    "Go through the text data by order of length."
+    """Go through the text data by order of length."""
 
     def __init__(self, data_source: NPArrayList, key: KeyFunc):
+        super(SortSampler, self).__init__()
         self.data_source, self.key = data_source, key
 
     def __len__(self) -> int:
@@ -176,9 +177,10 @@ class SortSampler(Sampler):
 
 
 class SortishSampler(Sampler):
-    "Go through the text data by order of length with a bit of randomness."
+    """Go through the text data by order of length with a bit of randomness."""
 
     def __init__(self, data_source: NPArrayList, key: KeyFunc, bs: int):
+        super(SortishSampler, self).__init__()
         self.data_source, self.key, self.bs = data_source, key, bs
 
     def __len__(self) -> int:
