@@ -1,4 +1,4 @@
-"`fastai.data` loads and manages datasets with `DataBunch`"
+"""`fastai.data` loads and manages datasets with `DataBunch`"""
 from .torch_core import *
 from torch.utils.data.dataloader import default_collate
 
@@ -95,16 +95,16 @@ class DeviceDataLoader:
         self.dl.num_workers = v
 
     def add_tfm(self, tfm: Callable) -> None:
-        "Add `tfm` to `self.tfms`."
+        """Add `tfm` to `self.tfms`."""
         self.tfms.append(tfm)
 
     def remove_tfm(self, tfm: Callable) -> None:
-        "Remove `tfm` from `self.tfms`."
+        """Remove `tfm` from `self.tfms`."""
         if tfm in self.tfms:
             self.tfms.remove(tfm)
 
     def new(self, **kwargs):
-        "Create a new copy of `self` with `kwargs` replacing current values."
+        """Create a new copy of `self` with `kwargs` replacing current values."""
         new_kwargs = {**self.dl.init_kwargs, **kwargs}
         return DeviceDataLoader(
             self.dl.__class__(self.dl.dataset, **new_kwargs),
@@ -114,14 +114,14 @@ class DeviceDataLoader:
         )
 
     def proc_batch(self, b: Tensor) -> Tensor:
-        "Process batch `b` of `TensorImage`."
+        """Process batch `b` of `TensorImage`."""
         b = to_device(b, self.device)
         for f in listify(self.tfms):
             b = f(b)
         return b
 
     def __iter__(self):
-        "Process and returns items from `DataLoader`."
+        """Process and returns items from `DataLoader`."""
         for b in self.dl:
             yield self.proc_batch(b)
 
@@ -137,7 +137,7 @@ class DeviceDataLoader:
         collate_fn: Callable = data_collate,
         **kwargs: Any,
     ):
-        "Create DeviceDataLoader from `dataset` with `bs` and `shuffle`: process using `num_workers`."
+        """Create DeviceDataLoader from `dataset` with `bs` and `shuffle`: process using `num_workers`."""
         return cls(
             DataLoader(dataset, batch_size=bs, shuffle=shuffle, num_workers=num_workers, **kwargs),
             device=device,
@@ -205,7 +205,9 @@ class DataBunch:
         no_check: bool = False,
         **dl_kwargs,
     ) -> "DataBunch":
-        "Create a `DataBunch` from `train_ds`, `valid_ds` and maybe `test_ds` with a batch size of `bs`. Passes `**dl_kwargs` to `DataLoader()`"
+        """Create a `DataBunch` from `train_ds`, `valid_ds` and maybe `test_ds` with a batch size of `bs`.
+        Passes `**dl_kwargs` to `DataLoader()`
+        """
         datasets = cls._init_ds(train_ds, valid_ds, test_ds)
         val_bs = ifnone(val_bs, bs)
         dls = [
@@ -229,7 +231,7 @@ class DataBunch:
         self.__dict__.update(data)
 
     def dl(self, ds_type: DatasetType = DatasetType.Valid) -> DeviceDataLoader:
-        "Returns an appropriate `DataLoader` with a dataset for validation, training, or test (`ds_type`)."
+        """Returns an appropriate `DataLoader` with a dataset for validation, training, or test (`ds_type`)."""
         # TODO: refactor
         return (
             self.train_dl
@@ -245,7 +247,7 @@ class DataBunch:
 
     @property
     def dls(self) -> List[DeviceDataLoader]:
-        "Returns a list of all DeviceDataLoaders. If you need a specific DeviceDataLoader, access via the relevant property (`train_dl`, `valid_dl`, etc) as the index of DLs in this list is not guaranteed to remain constant."
+        """Returns a list of all DeviceDataLoaders. If you need a specific DeviceDataLoader, access via the relevant property (`train_dl`, `valid_dl`, etc) as the index of DLs in this list is not guaranteed to remain constant."""
         res = [self.train_dl, self.fix_dl, self.single_dl]
         # Preserve the original ordering of Train, Valid, Fix, Single, Test Data Loaders
         # (Unknown/not verified as of 1.0.47 whether there are other methods explicitly using DLs their list index)
@@ -262,7 +264,7 @@ class DataBunch:
             dl.remove_tfm(tfm)
 
     def save(self, file: PathLikeOrBinaryStream = "data_save.pkl") -> None:
-        "Save the `DataBunch` in `self.path/file`. `file` can be file-like (file or buffer)"
+        """Save the `DataBunch` in `self.path/file`. `file` can be file-like (file or buffer)"""
         if rank_distrib():
             return  # don't save if slave proc
         if not getattr(self, "label_list", False):
@@ -273,7 +275,7 @@ class DataBunch:
         try_save(self.label_list, self.path, file)
 
     def add_test(self, items: Iterator, label: Any = None, tfms=None, tfm_y=None) -> None:
-        "Add the `items` as a test set. Pass along `label` otherwise label them with `EmptyLabel`."
+        """Add the `items` as a test set. Pass along `label` otherwise label them with `EmptyLabel`."""
         self.label_list.add_test(items, label=label, tfms=tfms, tfm_y=tfm_y)
         vdl = self.valid_dl
         dl = DataLoader(
@@ -292,7 +294,7 @@ class DataBunch:
         denorm: bool = True,
         cpu: bool = True,
     ) -> Collection[Tensor]:
-        "Get one batch from the data loader of `ds_type`. Optionally `detach` and `denorm`."
+        """Get one batch from the data loader of `ds_type`. Optionally `detach` and `denorm`."""
         dl = self.dl(ds_type)
         w = dl.num_workers
         dl.num_workers = 0
@@ -310,7 +312,7 @@ class DataBunch:
         return x, y
 
     def one_item(self, item, detach: bool = False, denorm: bool = False, cpu: bool = False):
-        "Get `item` into a batch. Optionally `detach` and `denorm`."
+        """Get `item` into a batch. Optionally `detach` and `denorm`."""
         ds = self.single_ds
         with ds.set_item(item):
             return self.one_batch(ds_type=DatasetType.Single, detach=detach, denorm=denorm, cpu=cpu)
@@ -322,7 +324,7 @@ class DataBunch:
         reverse: bool = False,
         **kwargs,
     ) -> None:
-        "Show a batch of data in `ds_type` on a few `rows`."
+        """Show a batch of data in `ds_type` on a few `rows`."""
         x, y = self.one_batch(ds_type, True, True)
         if reverse:
             x, y = x.flip(0), y.flip(0)
@@ -338,7 +340,7 @@ class DataBunch:
         self.train_ds.x.show_xys(xs, ys, **kwargs)
 
     def export(self, file: PathLikeOrBinaryStream = "export.pkl"):
-        "Export the minimal state of `self` for inference in `self.path/file`. `file` can be file-like (file or buffer)"
+        """Export the minimal state of `self` for inference in `self.path/file`. `file` can be file-like (file or buffer)"""
         xtra = dict(normalize=self.norm.keywords) if getattr(self, "norm", False) else {}
         try_save(self.valid_ds.get_state(**xtra), self.path, file)
 
@@ -403,7 +405,7 @@ class DataBunch:
             self.test_dl.batch_size = v
 
     def sanity_check(self):
-        "Check the underlying data in the training set can be properly loaded."
+        """Check the underlying data in the training set can be properly loaded."""
         final_message = "You can deactivate this warning by passing `no_check=True`."
         if (
             not hasattr(self.train_ds, "items")
@@ -459,7 +461,7 @@ def load_data(
     no_check: bool = False,
     **kwargs,
 ) -> DataBunch:
-    "Load a saved `DataBunch` from `path/file`. `file` can be file-like (file or buffer)"
+    """Load a saved `DataBunch` from `path/file`. `file` can be file-like (file or buffer)"""
     source = Path(path) / file if is_pathlike(file) else file
     distrib_barrier()
     ll = (
