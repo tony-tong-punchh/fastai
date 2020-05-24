@@ -30,7 +30,7 @@ class TerminateOnNaNCallback(Callback):
 
 
 class TrackerCallback(LearnerCallback):
-    "A `LearnerCallback` that keeps track of the best value in `monitor`."
+    """A `LearnerCallback` that keeps track of the best value in `monitor`."""
 
     def __init__(self, learn: Learner, monitor: str = "valid_loss", mode: str = "auto"):
         super().__init__(learn)
@@ -71,7 +71,7 @@ class TrackerCallback(LearnerCallback):
 
 
 class EarlyStoppingCallback(TrackerCallback):
-    "A `TrackerCallback` that terminates training when monitored quantity stops improving."
+    """A `TrackerCallback` that terminates training when monitored quantity stops improving."""
 
     def __init__(
         self,
@@ -87,12 +87,12 @@ class EarlyStoppingCallback(TrackerCallback):
             self.min_delta *= -1
 
     def on_train_begin(self, **kwargs: Any) -> None:
-        "Initialize inner arguments."
+        """Initialize inner arguments."""
         self.wait = 0
         super().on_train_begin(**kwargs)
 
     def on_epoch_end(self, epoch, **kwargs: Any) -> None:
-        "Compare the value monitored to its best score and maybe stop training."
+        """Compare the value monitored to its best score and maybe stop training."""
         current = self.get_monitor_value()
         if current is None:
             return
@@ -106,7 +106,7 @@ class EarlyStoppingCallback(TrackerCallback):
 
 
 class SaveModelCallback(TrackerCallback):
-    "A `TrackerCallback` that saves the model when monitored quantity is best."
+    """A `TrackerCallback` that saves the model when monitored quantity is best."""
 
     def __init__(
         self,
@@ -130,7 +130,7 @@ class SaveModelCallback(TrackerCallback):
             print(f"Model {self.name}_{epoch-1} not found.")
 
     def on_epoch_end(self, epoch: int, **kwargs: Any) -> None:
-        "Compare the value monitored to its best score and maybe save the model."
+        """Compare the value monitored to its best score and maybe save the model."""
         if self.every == "epoch":
             self.learn.save(f"{self.name}_{epoch}")
         else:  # every="improvement"
@@ -143,7 +143,7 @@ class SaveModelCallback(TrackerCallback):
                 self.learn.save(f"{self.name}")
 
     def on_train_end(self, **kwargs):
-        "Load the best model."
+        """Load the best model."""
         if self.every == "improvement" and os.path.isfile(
             self.path / self.model_dir / f"{self.name}.pth"
         ):
@@ -151,7 +151,7 @@ class SaveModelCallback(TrackerCallback):
 
 
 class ReduceLROnPlateauCallback(TrackerCallback):
-    "A `TrackerCallback` that reduces learning rate when a metric has stopped improving."
+    """A `TrackerCallback` that reduces learning rate when a metric has stopped improving."""
 
     def __init__(
         self,
@@ -174,7 +174,7 @@ class ReduceLROnPlateauCallback(TrackerCallback):
             self.min_delta *= -1
 
     def on_train_begin(self, **kwargs: Any) -> None:
-        "Initialize inner arguments."
+        """Initialize inner arguments."""
         self.wait, self.opt = 0, self.learn.opt
         super().on_train_begin(**kwargs)
 
@@ -197,7 +197,7 @@ class TrackEpochCallback(LearnerCallback):
     _order = -20  # Need to run before fit_one_cycle
 
     def __init__(self, learn: Learner, name: str = "epoch", epoch_offset: int = None):
-        "Store completed epoch number in `learn.model_dir/name`."
+        """Store completed epoch number in `learn.model_dir/name`."""
         super().__init__(learn)
         learn._test_writeable_path()
         self.path = learn.path / learn.model_dir / name
