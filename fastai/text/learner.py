@@ -54,7 +54,7 @@ _model_meta = {
 
 
 def convert_weights(wgts: Weights, stoi_wgts: Dict[str, int], itos_new: Collection[str]) -> Weights:
-    "Convert the model `wgts` to go with a new vocabulary."
+    """Convert the model `wgts` to go with a new vocabulary."""
     dec_bias, enc_wgts = wgts.get("1.decoder.bias", None), wgts["0.encoder.weight"]
     wgts_m = enc_wgts.mean(0)
     if dec_bias is not None:
@@ -77,7 +77,7 @@ def convert_weights(wgts: Weights, stoi_wgts: Dict[str, int], itos_new: Collecti
 
 
 class RNNLearner(Learner):
-    "Basic class for a `Learner` in NLP."
+    """Basic class for a `Learner` in NLP."""
 
     def __init__(
         self,
@@ -102,7 +102,7 @@ class RNNLearner(Learner):
             self.split(split_func)
 
     def save_encoder(self, name: str):
-        "Save the encoder to `name` inside the model directory."
+        """Save the encoder to `name` inside the model directory."""
         if rank_distrib():
             return  # don't save if slave proc
         if is_pathlike(name):
@@ -113,7 +113,7 @@ class RNNLearner(Learner):
         torch.save(encoder.state_dict(), self.path / self.model_dir / f"{name}.pth")
 
     def load_encoder(self, name: str, device: torch.device = None):
-        "Load the encoder `name` from the model directory."
+        """Load the encoder `name` from the model directory."""
         encoder = get_model(self.model)[0]
         if device is None:
             device = self.data.device
@@ -127,7 +127,7 @@ class RNNLearner(Learner):
         return self
 
     def load_pretrained(self, wgts_fname: str, itos_fname: str, strict: bool = True):
-        "Load a pretrained model and adapts it to the data vocabulary."
+        """Load a pretrained model and adapts it to the data vocabulary."""
         old_itos = pickle.load(open(itos_fname, "rb"))
         old_stoi = {v: k for k, v in enumerate(old_itos)}
         wgts = torch.load(wgts_fname, map_location=lambda storage, loc: storage)
@@ -146,7 +146,7 @@ class RNNLearner(Learner):
         pbar: Optional[PBar] = None,
         ordered: bool = True,
     ) -> List[Tensor]:
-        "Return predictions and targets on the valid, train, or test set, depending on `ds_type`."
+        """Return predictions and targets on the valid, train, or test set, depending on `ds_type`."""
         self.model.reset()
         if ordered:
             np.random.seed(42)
@@ -188,7 +188,7 @@ def decode_spec_tokens(tokens):
 
 
 class LanguageLearner(RNNLearner):
-    "Subclass of RNNLearner for predictions."
+    """Subclass of RNNLearner for predictions."""
 
     def predict(
         self,
@@ -200,7 +200,7 @@ class LanguageLearner(RNNLearner):
         sep: str = " ",
         decoder=decode_spec_tokens,
     ):
-        "Return `text` and the `n_words` that come after"
+        """Return `text` and the `n_words` that come after"""
         self.model.reset()
         xb, yb = self.data.one_item(text)
         new_idx = []
@@ -232,7 +232,7 @@ class LanguageLearner(RNNLearner):
         sep: str = " ",
         decoder=decode_spec_tokens,
     ):
-        "Return the `n_words` that come after `text` using beam search."
+        """Return the `n_words` that come after `text` using beam search."""
         self.model.reset()
         self.model.eval()
         xb, yb = self.data.one_item(text)
@@ -300,7 +300,7 @@ class LanguageLearner(RNNLearner):
 
 
 def get_language_model(arch: Callable, vocab_sz: int, config: dict = None, drop_mult: float = 1.0):
-    "Create a language model from `arch` and its `config`, maybe `pretrained`."
+    """Create a language model from `arch` and its `config`, maybe `pretrained`."""
     meta = _model_meta[arch]
     config = ifnone(config, meta["config_lm"]).copy()
     for k in config.keys():
@@ -326,7 +326,7 @@ def language_model_learner(
     pretrained_fnames: OptStrTuple = None,
     **learn_kwargs,
 ) -> "LanguageLearner":
-    "Create a `Learner` with a language model from `data` and `arch`."
+    """Create a `Learner` with a language model from `data` and `arch`."""
     model = get_language_model(arch, len(data.vocab.itos), config=config, drop_mult=drop_mult)
     meta = _model_meta[arch]
     learn = LanguageLearner(data, model, split_func=meta["split_lm"], **learn_kwargs)
@@ -349,7 +349,7 @@ def language_model_learner(
 
 
 def masked_concat_pool(outputs: Sequence[Tensor], mask: Tensor) -> Tensor:
-    "Pool MultiBatchEncoder outputs into one vector [last_hidden, max_pool, avg_pool]."
+    """Pool MultiBatchEncoder outputs into one vector [last_hidden, max_pool, avg_pool]."""
     output = outputs[-1]
     avg_pool = output.masked_fill(mask[:, :, None], 0).mean(dim=1)
     avg_pool *= output.size(1) / (output.size(1) - mask.type(avg_pool.dtype).sum(dim=1))[:, None]
@@ -359,7 +359,7 @@ def masked_concat_pool(outputs: Sequence[Tensor], mask: Tensor) -> Tensor:
 
 
 class PoolingLinearClassifier(Module):
-    "Create a linear classifier with pooling."
+    """Create a linear classifier with pooling."""
 
     def __init__(self, layers: Collection[int], drops: Collection[float]):
         mod_layers = []
@@ -378,7 +378,7 @@ class PoolingLinearClassifier(Module):
 
 
 class MultiBatchEncoder(Module):
-    "Create an encoder over `module` that can process a full sentence."
+    """Create an encoder over `module` that can process a full sentence."""
 
     def __init__(self, bptt: int, max_len: int, module: nn.Module, pad_idx: int = 1):
         self.max_len, self.bptt, self.module, self.pad_idx = max_len, bptt, module, pad_idx
@@ -416,7 +416,7 @@ def get_text_classifier(
     ps: Collection[float] = None,
     pad_idx: int = 1,
 ) -> nn.Module:
-    "Create a text classifier from `arch` and its `config`, maybe `pretrained`."
+    """Create a text classifier from `arch` and its `config`, maybe `pretrained`."""
     meta = _model_meta[arch]
     config = ifnone(config, meta["config_clas"]).copy()
     for k in config.keys():
@@ -446,7 +446,7 @@ def text_classifier_learner(
     ps: Collection[float] = None,
     **learn_kwargs,
 ) -> "TextClassifierLearner":
-    "Create a `Learner` with a text classifier from `data` and `arch`."
+    """Create a `Learner` with a text classifier from `data` and `arch`."""
     model = get_text_classifier(
         arch,
         len(data.vocab.itos),
