@@ -70,7 +70,7 @@ def get_preds(
     loss_func: OptLossFunc = None,
     n_batch: Optional[int] = None,
 ) -> List[Tensor]:
-    "Tuple of predictions and targets, and optional losses (if `loss_func`) using `dl`, max batches `n_batch`."
+    """Tuple of predictions and targets, and optional losses (if `loss_func`) using `dl`, max batches `n_batch`."""
     res = [
         to_float(torch.cat(o).cpu())
         for o in zip(
@@ -94,7 +94,7 @@ def validate(
     average=True,
     n_batch: Optional[int] = None,
 ) -> Iterator[Tuple[Union[Tensor, int], ...]]:
-    "Calculate `loss_func` of `model` on `dl` in evaluation mode."
+    """Calculate `loss_func` of `model` on `dl` in evaluation mode."""
     model.eval()
     with torch.no_grad():
         val_losses, nums = [], []
@@ -133,10 +133,11 @@ def train_epoch(
 
 @dataclass
 class BasicLearner:
+    """A basic learner has four components"""
+    data: DataBunch
     model: nn.Module
     loss_func: LossFunction
     opt: optim.Optimizer
-    data: DataBunch
 
 
 def fit(
@@ -145,7 +146,7 @@ def fit(
     callbacks: Optional[CallbackList] = None,
     metrics: OptMetrics = None,
 ) -> None:
-    "Fit the `model` on `data` and learn using `loss_func` and `opt`."
+    """Fit the `model` on `data` and learn using `loss_func` and `opt`."""
     assert (
         len(learn.data.train_dl) != 0
     ), f"""Your training dataloader is empty, can't train a model.
@@ -227,8 +228,8 @@ def _loss_func2activ(loss_func):
 
 
 @dataclass
-class Learner:
-    "Trainer for `model` using `data` to minimize `loss_func` with optimizer `opt_func`."
+class Learner(BasicLearner):
+    """Trainer for `model` using `data` to minimize `loss_func` with optimizer `opt_func`."""
     data: DataBunch
     model: nn.Module
     opt_func: Callable = AdamW
@@ -247,7 +248,7 @@ class Learner:
     silent: bool = None
 
     def __post_init__(self) -> None:
-        "Setup path,metrics, callbacks and ensure model directory exists."
+        """Setup path,metrics, callbacks and ensure model directory exists."""
         self.path = Path(ifnone(self.path, self.data.path))
         self.model = self.model.to(self.data.device)
         self.loss_func = self.loss_func or self.data.loss_func
@@ -278,7 +279,7 @@ class Learner:
         os.remove(tmp_file)
 
     def lr_range(self, lr: Union[float, slice]) -> np.ndarray:
-        "Build differential learning rates from `lr`."
+        """Build differential learning rates from `lr`."""
         if not isinstance(lr, slice):
             return lr
         if lr.start:
@@ -294,7 +295,7 @@ class Learner:
         wd: Floats = None,
         callbacks: Collection[Callback] = None,
     ) -> None:
-        "Fit the model on this learner with `lr` learning rate, `wd` weight decay for `epochs` with `callbacks`."
+        """Fit the model on this learner with `lr` learning rate, `wd` weight decay for `epochs` with `callbacks`."""
         lr = self.lr_range(lr)
         if wd is None:
             wd = self.wd
@@ -308,20 +309,20 @@ class Learner:
         fit(epochs, self, metrics=self.metrics, callbacks=self.callbacks + callbacks)
 
     def create_opt(self, lr: Floats, wd: Floats = 0.0) -> None:
-        "Create optimizer with `lr` learning rate and `wd` weight decay."
+        """Create optimizer with `lr` learning rate and `wd` weight decay."""
         self.opt = OptimWrapper.create(
             self.opt_func, lr, self.layer_groups, wd=wd, true_wd=self.true_wd, bn_wd=self.bn_wd
         )
 
     def split(self, split_on: SplitFuncOrIdxList) -> None:
-        "Split the model at `split_on`."
+        """Split the model at `split_on`."""
         if isinstance(split_on, Callable):
             split_on = split_on(self.model)
         self.layer_groups = split_model(self.model, split_on)
         return self
 
     def freeze_to(self, n: int) -> None:
-        "Freeze layers up to layer group `n`."
+        """Freeze layers up to layer group `n`."""
         if hasattr(self.model, "reset"):
             self.model.reset()
         for g in self.layer_groups[:n]:
@@ -333,16 +334,16 @@ class Learner:
         self.create_opt(defaults.lr)
 
     def freeze(self) -> None:
-        "Freeze up to last layer group."
+        """Freeze up to last layer group."""
         assert len(self.layer_groups) > 1
         self.freeze_to(-1)
 
     def unfreeze(self):
-        "Unfreeze entire model."
+        """Unfreeze entire model."""
         self.freeze_to(0)
 
     def export(self, file: PathLikeOrBinaryStream = "export.pkl", destroy=False):
-        "Export the state of the `Learner` in `self.path/file`. `file` can be file-like (file or buffer)"
+        """Export the state of the `Learner` in `self.path/file`. `file` can be file-like (file or buffer)"""
         if rank_distrib():
             return  # don't save if slave proc
         args = [
@@ -374,7 +375,9 @@ class Learner:
     def save(
         self, file: PathLikeOrBinaryStream = None, return_path: bool = False, with_opt: bool = True
     ):
-        "Save model and optimizer state (if `with_opt`) with `file` to `self.model_dir`. `file` can be file-like (file or buffer)"
+        """Save model and optimizer state (if `with_opt`) with `file` to `self.model_dir`.
+        `file` can be file-like (file or buffer)
+        """
         if is_pathlike(file):
             self._test_writeable_path()
         if rank_distrib():
@@ -391,7 +394,7 @@ class Learner:
             return target
 
     def dl(self, ds_type: DatasetType = DatasetType.Valid):
-        "Return DataLoader for DatasetType `ds_type`."
+        """Return DataLoader for DatasetType `ds_type`."""
         return self.data.dl(ds_type)
 
     def load(
@@ -403,7 +406,9 @@ class Learner:
         purge: bool = False,
         remove_module: bool = False,
     ) -> "Learner":
-        "Load model and optimizer state (if `with_opt`) `file` from `self.model_dir` using `device`. `file` can be file-like (file or buffer)"
+        """Load model and optimizer state (if `with_opt`) `file` from `self.model_dir` using `device`.
+        `file` can be file-like (file or buffer)
+        """
         if purge:
             self.purge(clear_opt=ifnone(with_opt, False))
         if device is None:
@@ -436,7 +441,7 @@ class Learner:
         return self
 
     def destroy(self):
-        "Free the Learner internals, leaving just an empty shell that consumes no memory"
+        """Free the Learner internals, leaving just an empty shell that consumes no memory"""
 
         class ZombieLearner(Learner):
             msg = "this object has been destroyed"
@@ -462,7 +467,7 @@ class Learner:
         print("this Learner object self-destroyed - it still exists, but no longer usable")
 
     def purge(self, clear_opt: bool = True):
-        "Purge the `Learner` of all cached attributes to release some GPU memory."
+        """Purge the `Learner` of all cached attributes to release some GPU memory."""
         self._test_writeable_path()
         attrs_all = [k for k in self.__dict__.keys() if not k.startswith("__")]
         attrs_pkl = [
@@ -518,7 +523,7 @@ class Learner:
         n_batch: Optional[int] = None,
         pbar: Optional[PBar] = None,
     ) -> List[Tensor]:
-        "Return predictions and targets on `ds_type` dataset."
+        """Return predictions and targets on `ds_type` dataset."""
         lf = self.loss_func if with_loss else None
         activ = ifnone(activ, _loss_func2activ(self.loss_func))
         if not getattr(self, "opt", False):
@@ -544,7 +549,7 @@ class Learner:
         with_dropout: bool = False,
         activ: nn.Module = None,
     ) -> List[Tensor]:
-        "Return output of the model on one batch from `ds_type` dataset."
+        """Return output of the model on one batch from `ds_type` dataset."""
         if batch is not None:
             xb, yb = batch
         else:
@@ -570,7 +575,7 @@ class Learner:
         return [ds.reconstruct(o) for o in res]
 
     def backward(self, item):
-        "Pass `item` through the model and computes the gradient. Useful if `backward_hooks` are attached."
+        """Pass `item` through the model and computes the gradient. Useful if `backward_hooks` are attached."""
         xb, yb = self.data.one_item(item)
         loss = loss_batch(
             self.model.eval(),
@@ -590,7 +595,7 @@ class Learner:
         with_dropout: bool = False,
         **kwargs,
     ):
-        "Return predicted class, label and probabilities for `item`."
+        """Return predicted class, label and probabilities for `item`."""
         batch = self.data.one_item(item)
         res = self.pred_batch(batch=batch, with_dropout=with_dropout)
         raw_pred, x = grab_idx(res, 0, batch_first=batch_first), batch[0]
@@ -606,7 +611,7 @@ class Learner:
         return (x, y, pred, raw_pred) if return_x else (y, pred, raw_pred)
 
     def validate(self, dl=None, callbacks=None, metrics=None):
-        "Validate on `dl` with potential `callbacks` and `metrics`."
+        """Validate on `dl` with potential `callbacks` and `metrics`."""
         dl = ifnone(dl, self.data.valid_dl)
         metrics = ifnone(metrics, self.metrics)
         cb_handler = CallbackHandler(self.callbacks + ifnone(callbacks, []), metrics)
@@ -617,7 +622,7 @@ class Learner:
         return cb_handler.state_dict["last_metrics"]
 
     def show_results(self, ds_type=DatasetType.Valid, rows: int = 5, **kwargs):
-        "Show `rows` result of predictions on `ds_type` dataset."
+        """Show `rows` result of predictions on `ds_type` dataset."""
         # TODO: get read of has_arg x and split_kwargs_by_func if possible
         # TODO: simplify this and refactor with pred_batch(...reconstruct=True)
         n_items = rows ** 2 if self.data.train_ds.x._square_show_res else rows
@@ -646,7 +651,7 @@ class Learner:
         ds.x.show_xyzs(xs, ys, zs, **kwargs)
 
     def apply_dropout(self, m):
-        "If a module contains 'dropout' in it's name, it will be switched to .train() mode."
+        """If a module contains 'dropout' in it's name, it will be switched to .train() mode."""
         if "dropout" in m.__class__.__name__.lower():
             m.train()
 
@@ -658,14 +663,14 @@ class Learner:
 
 
 class RecordOnCPU(Callback):
-    "Store the `input` and `target` going through the model on the CPU."
+    """Store the `input` and `target` going through the model on the CPU."""
 
     def on_batch_begin(self, last_input, last_target, **kwargs):
         self.input, self.target = to_cpu(last_input), to_cpu(last_target)
 
 
 class LearnerCallback(Callback):
-    "Base class for creating callbacks for a `Learner`."
+    """Base class for creating callbacks for a `Learner`."""
 
     def __init__(self, learn):
         self._learn = weakref.ref(learn)
@@ -692,7 +697,7 @@ class LearnerCallback(Callback):
 
 
 class Recorder(LearnerCallback):
-    "A `LearnerCallback` that records epoch, loss, opt and metric data during training."
+    """A `LearnerCallback` that records epoch, loss, opt and metric data during training."""
     _order = -10
 
     def __init__(self, learn: Learner, add_time: bool = True, silent: bool = False):

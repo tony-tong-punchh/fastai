@@ -20,7 +20,7 @@ __all__ = [
 
 
 class OptimWrapper:
-    "Basic wrapper around `opt` to simplify hyper-parameters changes."
+    """Basic wrapper around `opt` to simplify hyper-parameters changes."""
 
     def __init__(
         self, opt: optim.Optimizer, wd: Floats = 0.0, true_wd: bool = False, bn_wd: bool = True
@@ -318,13 +318,13 @@ def _get_init_state():
 
 @dataclass
 class CallbackHandler:
-    "Manage all of the registered `callbacks` and `metrics`, smoothing loss by momentum `beta`."
+    """Manage all of the registered `callbacks` and `metrics`, smoothing loss by momentum `beta`."""
     callbacks: CallbackList = None
     metrics: CallbackList = None
     beta: float = 0.98
 
     def __post_init__(self) -> None:
-        "Initialize smoother and learning stats."
+        """Initialize smoother and learning stats."""
         self.callbacks = ifnone(self.callbacks, [])
         self.metrics = ifnone(self.metrics, [])
         self.metrics = [
@@ -335,7 +335,7 @@ class CallbackHandler:
         self.state_dict: Dict[str, Union[int, float, Tensor]] = _get_init_state()
 
     def _call_and_update(self, cb, cb_name, **kwargs) -> None:
-        "Call `cb_name` on `cb` and update the inner state."
+        """Call `cb_name` on `cb` and update the inner state."""
         new = ifnone(getattr(cb, f"on_{cb_name}")(**self.state_dict, **kwargs), dict())
         for k, v in new.items():
             if k not in self.state_dict:
@@ -344,7 +344,7 @@ class CallbackHandler:
                 self.state_dict[k] = v
 
     def __call__(self, cb_name, call_mets=True, **kwargs) -> None:
-        "Call through to all of the `CallbakHandler` functions."
+        """Call through to all of the `CallbakHandler` functions."""
         if call_mets:
             for met in self.metrics:
                 self._call_and_update(met, cb_name, **kwargs)
@@ -352,7 +352,7 @@ class CallbackHandler:
             self._call_and_update(cb, cb_name, **kwargs)
 
     def set_dl(self, dl: DataLoader):
-        "Set the current `dl` used."
+        """Set the current `dl` used."""
         if hasattr(self, "cb_dl"):
             self.callbacks.remove(self.cb_dl)
         if isinstance(dl.dataset, Callback):
@@ -360,7 +360,7 @@ class CallbackHandler:
             self.cb_dl = dl.dataset
 
     def on_train_begin(self, epochs: int, pbar: PBar, metrics: MetricFuncList) -> None:
-        "About to start learning."
+        """About to start learning."""
         self.state_dict = _get_init_state()
         self.state_dict.update(dict(n_epochs=epochs, pbar=pbar, metrics=metrics))
         names = [
@@ -374,12 +374,12 @@ class CallbackHandler:
                 cb.jump_to_epoch(self.state_dict["epoch"])
 
     def on_epoch_begin(self) -> None:
-        "Handle new epoch."
+        """Handle new epoch."""
         self.state_dict["num_batch"], self.state_dict["stop_training"] = 0, False
         self("epoch_begin")
 
     def on_batch_begin(self, xb: Tensor, yb: Tensor, train: bool = True) -> Tuple[Any, Any]:
-        "Handle new batch `xb`,`yb` in `train` or validation."
+        """Handle new batch `xb`,`yb` in `train` or validation."""
         self.state_dict.update(
             dict(
                 last_input=xb,
@@ -395,30 +395,30 @@ class CallbackHandler:
         return self.state_dict["last_input"], self.state_dict["last_target"]
 
     def on_loss_begin(self, out: Tensor) -> Any:
-        "Handle start of loss calculation with model output `out`."
+        """Handle start of loss calculation with model output `out`."""
         self.state_dict["last_output"] = out
         self("loss_begin", call_mets=False)
         return self.state_dict["last_output"]
 
     def on_backward_begin(self, loss: Tensor) -> Tuple[Any, Any]:
-        "Handle gradient calculation on `loss`."
+        """Handle gradient calculation on `loss`."""
         self.smoothener.add_value(loss.float().detach().cpu())
         self.state_dict["last_loss"], self.state_dict["smooth_loss"] = loss, self.smoothener.smooth
         self("backward_begin", call_mets=False)
         return self.state_dict["last_loss"], self.state_dict["skip_bwd"]
 
     def on_backward_end(self) -> Any:
-        "Handle end of gradient calculation."
+        """Handle end of gradient calculation."""
         self("backward_end", call_mets=False)
         return self.state_dict["skip_step"]
 
     def on_step_end(self) -> Any:
-        "Handle end of optimization step."
+        """Handle end of optimization step."""
         self("step_end", call_mets=False)
         return self.state_dict["skip_zero"]
 
     def on_batch_end(self, loss: Tensor) -> Any:
-        "Handle end of processing one batch with `loss`."
+        """Handle end of processing one batch with `loss`."""
         self.state_dict["last_loss"] = loss
         self("batch_end", call_mets=not self.state_dict["train"])
         if self.state_dict["train"]:
@@ -427,14 +427,14 @@ class CallbackHandler:
         return self.state_dict["stop_epoch"]
 
     def on_epoch_end(self, val_loss: Tensor) -> bool:
-        "Epoch is done, process `val_loss`."
+        """Epoch is done, process `val_loss`."""
         self.state_dict["last_metrics"] = [val_loss] if val_loss is not None else [None]
         self("epoch_end", call_mets=val_loss is not None)
         self.state_dict["epoch"] += 1
         return self.state_dict["stop_training"]
 
     def on_train_end(self, exception: Union[bool, Exception]) -> None:
-        "Handle end of training, `exception` is an `Exception` or False if no exceptions during training."
+        """Handle end of training, `exception` is an `Exception` or False if no exceptions during training."""
         self("train_end", exception=exception)
 
     @property
@@ -443,7 +443,7 @@ class CallbackHandler:
 
 
 class AverageMetric(Callback):
-    "Wrap a `func` in a callback for metrics computation."
+    """Wrap a `func` in a callback for metrics computation."""
 
     def __init__(self, func):
         # If func has a __name__ use this one else it should be a partial
@@ -452,11 +452,11 @@ class AverageMetric(Callback):
         self.world = num_distrib()
 
     def on_epoch_begin(self, **kwargs):
-        "Set the inner value to 0."
+        """Set the inner value to 0."""
         self.val, self.count = 0.0, 0
 
     def on_batch_end(self, last_output, last_target, **kwargs):
-        "Update metric computation with `last_output` and `last_target`."
+        """Update metric computation with `last_output` and `last_target`."""
         if not is_listy(last_target):
             last_target = [last_target]
         self.count += first_el(last_target).size(0)
@@ -468,43 +468,43 @@ class AverageMetric(Callback):
         self.val += first_el(last_target).size(0) * val.detach().cpu()
 
     def on_epoch_end(self, last_metrics, **kwargs):
-        "Set the final result in `last_metrics`."
+        """Set the final result in `last_metrics`."""
         return add_metrics(last_metrics, self.val / self.count)
 
 
 def annealing_no(start: Number, end: Number, pct: float) -> Number:
-    "No annealing, always return `start`."
+    """No annealing, always return `start`."""
     return start
 
 
 def annealing_linear(start: Number, end: Number, pct: float) -> Number:
-    "Linearly anneal from `start` to `end` as pct goes from 0.0 to 1.0."
+    """Linearly anneal from `start` to `end` as pct goes from 0.0 to 1.0."""
     return start + pct * (end - start)
 
 
 def annealing_exp(start: Number, end: Number, pct: float) -> Number:
-    "Exponentially anneal from `start` to `end` as pct goes from 0.0 to 1.0."
+    """Exponentially anneal from `start` to `end` as pct goes from 0.0 to 1.0."""
     return start * (end / start) ** pct
 
 
 def annealing_cos(start: Number, end: Number, pct: float) -> Number:
-    "Cosine anneal from `start` to `end` as pct goes from 0.0 to 1.0."
+    """Cosine anneal from `start` to `end` as pct goes from 0.0 to 1.0."""
     cos_out = np.cos(np.pi * pct) + 1
     return end + (start - end) / 2 * cos_out
 
 
 def do_annealing_poly(start: Number, end: Number, pct: float, degree: Number) -> Number:
-    "Helper function for `anneal_poly`."
+    """Helper function for `anneal_poly`."""
     return end + (start - end) * (1 - pct) ** degree
 
 
 def annealing_poly(degree: Number) -> Number:
-    "Anneal polynomically from `start` to `end` as pct goes from 0.0 to 1.0."
+    """Anneal polynomically from `start` to `end` as pct goes from 0.0 to 1.0."""
     return functools.partial(do_annealing_poly, degree=degree)
 
 
 class Scheduler:
-    'Used to "step" from start,end (`vals`) over `n_iter` iterations on a schedule defined by `func`'
+    """Used to "step" from start,end (`vals`) over `n_iter` iterations on a schedule defined by `func`"""
 
     def __init__(self, vals: StartOptEnd, n_iter: int, func: Optional[AnnealFunc] = None):
         self.start, self.end = (vals[0], vals[1]) if is_tuple(vals) else (vals, 0)
@@ -519,11 +519,11 @@ class Scheduler:
         self.n = 0
 
     def step(self) -> Number:
-        "Return next value along annealed schedule."
+        """Return next value along annealed schedule."""
         self.n += 1
         return self.func(self.start, self.end, self.n / self.n_iter)
 
     @property
     def is_done(self) -> bool:
-        "Return `True` if schedule completed."
+        """Return `True` if schedule completed."""
         return self.n >= self.n_iter
