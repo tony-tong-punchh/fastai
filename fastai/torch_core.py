@@ -153,7 +153,7 @@ def tensor(x: Any, *rest) -> Tensor:
 
 
 class Module(nn.Module, metaclass=PrePostInitMeta):
-    "Same as `nn.Module`, but no need for subclasses to call `super().__init__`"
+    """Same as `nn.Module`, but no need for subclasses to call `super().__init__`"""
 
     def __pre_init__(self):
         super().__init__()

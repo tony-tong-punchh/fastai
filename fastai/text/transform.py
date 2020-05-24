@@ -34,7 +34,7 @@ defaults.text_spec_tok = [UNK, PAD, BOS, EOS, FLD, TK_MAJ, TK_UP, TK_REP, TK_WRE
 
 
 class BaseTokenizer:
-    "Basic class for a tokenizer function."
+    """Basic class for a tokenizer function."""
 
     def __init__(self, lang: str):
         self.lang = lang
@@ -47,7 +47,7 @@ class BaseTokenizer:
 
 
 class SpacyTokenizer(BaseTokenizer):
-    "Wrapper around a spacy tokenizer to make it a `BaseTokenizer`."
+    """Wrapper around a spacy tokenizer to make it a `BaseTokenizer`."""
 
     def __init__(self, lang: str):
         self.tok = spacy.blank(lang, disable=["parser", "tagger", "ner"])
@@ -61,17 +61,17 @@ class SpacyTokenizer(BaseTokenizer):
 
 
 def spec_add_spaces(t: str) -> str:
-    "Add spaces around / and # in `t`. \n"
+    """Add spaces around / and # in `t`. \n"""
     return re.sub(r"([/#\n])", r" \1 ", t)
 
 
 def rm_useless_spaces(t: str) -> str:
-    "Remove multiple spaces in `t`."
+    """Remove multiple spaces in `t`."""
     return re.sub(" {2,}", " ", t)
 
 
 def replace_rep(t: str) -> str:
-    "Replace repetitions at the character level in `t`."
+    """Replace repetitions at the character level in `t`."""
 
     def _replace_rep(m: Collection[str]) -> str:
         c, cc = m.groups()
@@ -82,7 +82,7 @@ def replace_rep(t: str) -> str:
 
 
 def replace_wrep(t: str) -> str:
-    "Replace word repetitions in `t`."
+    """Replace word repetitions in `t`."""
 
     def _replace_wrep(m: Collection[str]) -> str:
         c, cc = m.groups()
@@ -93,7 +93,7 @@ def replace_wrep(t: str) -> str:
 
 
 def fix_html(x: str) -> str:
-    "List of replacements from html strings in `x`."
+    """List of replacements from html strings in `x`."""
     re1 = re.compile(r"  +")
     x = (
         x.replace("#39;", "'")
@@ -115,7 +115,7 @@ def fix_html(x: str) -> str:
 
 
 def replace_all_caps(x: Collection[str]) -> Collection[str]:
-    "Replace tokens in ALL CAPS in `x` by their lower version and add `TK_UP` before."
+    """Replace tokens in ALL CAPS in `x` by their lower version and add `TK_UP` before."""
     res = []
     for t in x:
         if t.isupper() and len(t) > 1:
@@ -127,7 +127,7 @@ def replace_all_caps(x: Collection[str]) -> Collection[str]:
 
 
 def deal_caps(x: Collection[str]) -> Collection[str]:
-    "Replace all Capitalized tokens in `x` by their lower version and add `TK_MAJ` before."
+    """Replace all Capitalized tokens in `x` by their lower version and add `TK_MAJ` before."""
     res = []
     for t in x:
         if t == "":
@@ -143,7 +143,7 @@ defaults.text_post_rules = [replace_all_caps, deal_caps]
 
 
 class Tokenizer:
-    "Put together rules and a tokenizer function to tokenize text with multiprocessing."
+    """Put together rules and a tokenizer function to tokenize text with multiprocessing."""
 
     def __init__(
         self,
@@ -169,7 +169,7 @@ class Tokenizer:
         return res
 
     def process_text(self, t: str, tok: BaseTokenizer) -> List[str]:
-        "Process one text `t` with tokenizer `tok`."
+        """Process one text `t` with tokenizer `tok`."""
         for rule in self.pre_rules:
             t = rule(t)
         toks = tok.tokenizer(t)
@@ -178,14 +178,14 @@ class Tokenizer:
         return toks
 
     def _process_all_1(self, texts: Collection[str]) -> List[List[str]]:
-        "Process a list of `texts` in one process."
+        """Process a list of `texts` in one process."""
         tok = self.tok_func(self.lang)
         if self.special_cases:
             tok.add_special_cases(self.special_cases)
         return [self.process_text(str(t), tok) for t in texts]
 
     def process_all(self, texts: Collection[str]) -> List[List[str]]:
-        "Process a list of `texts`."
+        """Process a list of `texts`."""
         if self.n_cpus <= 1:
             return self._process_all_1(texts)
         with ProcessPoolExecutor(self.n_cpus) as e:
@@ -193,18 +193,18 @@ class Tokenizer:
 
 
 class Vocab:
-    "Contain the correspondence between numbers and tokens and numericalize."
+    """Contain the correspondence between numbers and tokens and numericalize."""
 
     def __init__(self, itos: Collection[str]):
         self.itos = itos
         self.stoi = collections.defaultdict(int, {v: k for k, v in enumerate(self.itos)})
 
     def numericalize(self, t: Collection[str]) -> List[int]:
-        "Convert a list of tokens `t` to their ids."
+        """Convert a list of tokens `t` to their ids."""
         return [self.stoi[w] for w in t]
 
     def textify(self, nums: Collection[int], sep=" ") -> List[str]:
-        "Convert a list of `nums` to their tokens."
+        """Convert a list of `nums` to their tokens."""
         return (
             sep.join([self.itos[i] for i in nums])
             if sep is not None
@@ -219,14 +219,14 @@ class Vocab:
         self.stoi = collections.defaultdict(int, {v: k for k, v in enumerate(self.itos)})
 
     def save(self, path):
-        "Save `self.itos` in `path`"
+        """Save `self.itos` in `path`"""
         if rank_distrib():
             return  # don't save if slave proc
         pickle.dump(self.itos, open(path, "wb"))
 
     @classmethod
     def create(cls, tokens: Tokens, max_vocab: int, min_freq: int) -> "Vocab":
-        "Create a vocabulary from a set of `tokens`."
+        """Create a vocabulary from a set of `tokens`."""
         freq = Counter(p for o in tokens for p in o)
         itos = [o for o, c in freq.most_common(max_vocab) if c >= min_freq]
         for o in reversed(defaults.text_spec_tok):
@@ -243,6 +243,6 @@ class Vocab:
 
     @classmethod
     def load(cls, path):
-        "Load the `Vocab` contained in `path`"
+        """Load the `Vocab` contained in `path`"""
         itos = pickle.load(open(path, "rb"))
         return cls(itos)

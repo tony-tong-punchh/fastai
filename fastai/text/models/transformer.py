@@ -248,7 +248,7 @@ class DecoderLayer(Module):
 
 
 class Transformer(Module):
-    "Transformer model: https://arxiv.org/abs/1706.03762."
+    """Transformer model: https://arxiv.org/abs/1706.03762."""
 
     def __init__(
         self,
@@ -319,7 +319,7 @@ class Transformer(Module):
 
 
 class TransformerXL(Module):
-    "TransformerXL model: https://arxiv.org/abs/1901.02860."
+    """TransformerXL model: https://arxiv.org/abs/1901.02860."""
 
     def __init__(
         self,

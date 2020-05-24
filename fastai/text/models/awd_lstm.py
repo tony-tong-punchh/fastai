@@ -40,7 +40,7 @@ class RNNDropout(Module):
 
 
 class WeightDropout(Module):
-    "A module that warps another layer in which some weights will be replaced by 0 during training."
+    """A module that warps another layer in which some weights will be replaced by 0 during training."""
 
     def __init__(
         self, module: nn.Module, weight_p: float, layer_names: Collection[str] = ["weight_hh_l0"]
@@ -58,7 +58,7 @@ class WeightDropout(Module):
             self.module.flatten_parameters = self._do_nothing
 
     def _setweights(self):
-        "Apply dropout to the raw weights."
+        """Apply dropout to the raw weights."""
         for i, layer in enumerate(self.layer_names):
             raw_w = getattr(self, f"{layer}_raw")
             self.module._parameters[layer] = F.dropout(
@@ -86,7 +86,7 @@ class WeightDropout(Module):
 
 
 class EmbeddingDropout(Module):
-    "Apply dropout with probabily `embed_p` to an embedding layer `emb`."
+    """Apply dropout with probabily `embed_p` to an embedding layer `emb`."""
 
     def __init__(self, emb: nn.Module, embed_p: float):
         self.emb, self.embed_p = emb, embed_p
@@ -115,7 +115,7 @@ class EmbeddingDropout(Module):
 
 
 class AWD_LSTM(Module):
-    "AWD-LSTM/QRNN inspired by https://arxiv.org/abs/1708.02182."
+    """AWD-LSTM/QRNN inspired by https://arxiv.org/abs/1708.02182."""
 
     initrange = 0.1
 
@@ -227,7 +227,7 @@ class AWD_LSTM(Module):
 
 
 class LinearDecoder(Module):
-    "To go on top of a RNNCore module and create a Language Model."
+    """To go on top of a RNNCore module and create a Language Model."""
     initrange = 0.1
 
     def __init__(
@@ -254,7 +254,7 @@ class LinearDecoder(Module):
 
 
 class SequentialRNN(nn.Sequential):
-    "A sequential module that passes the reset call to its children."
+    """A sequential module that passes the reset call to its children."""
 
     def reset(self):
         for c in self.children():
@@ -307,7 +307,7 @@ awd_lstm_clas_config = dict(
 
 
 def value2rgba(x: float, cmap: Callable = cm.RdYlGn, alpha_mult: float = 1.0) -> Tuple:
-    "Convert a value `x` from 0 to 1 (inclusive) to an RGBA tuple according to `cmap` times transparency `alpha_mult`."
+    """Convert a value `x` from 0 to 1 (inclusive) to an RGBA tuple according to `cmap` times transparency `alpha_mult`."""
     c = cmap(x)
     rgb = (np.array(c[:-1]) * 255).astype(int)
     a = c[-1] * alpha_mult
