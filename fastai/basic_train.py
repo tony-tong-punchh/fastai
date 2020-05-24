@@ -36,7 +36,7 @@ def loss_batch(
     opt: OptOptimizer = None,
     cb_handler: Optional[CallbackHandler] = None,
 ) -> Tuple[Union[Tensor, int, float, str]]:
-    "Calculate loss and metrics for a batch, call out to callbacks as necessary."
+    """Calculate loss and metrics for a batch, call out to callbacks as necessary."""
     cb_handler = ifnone(cb_handler, CallbackHandler())
     if not is_listy(xb):
         xb = [xb]

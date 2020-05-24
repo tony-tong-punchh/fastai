@@ -264,7 +264,7 @@ class TextDataBunch(DataBunch):
         processor: PreProcessor = None,
         **kwargs,
     ) -> DataBunch:
-        "Create a `TextDataBunch` from ids, labels and a `vocab`. `kwargs` are passed to the dataloader creation."
+        """Create a `TextDataBunch` from ids, labels and a `vocab`. `kwargs` are passed to the dataloader creation."""
         src = ItemLists(
             path,
             TextList(train_ids, vocab, path=path, processor=[]),
@@ -677,7 +677,7 @@ class OpenFileProcessor(PreProcessor):
 
 
 class TextList(ItemList):
-    "Basic `ItemList` for text data."
+    """Basic `ItemList` for text data."""
     _bunch = TextClasDataBunch
     _processor = [TokenizeProcessor, NumericalizeProcessor]
     _is_lm = False
