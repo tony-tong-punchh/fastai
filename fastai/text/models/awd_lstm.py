@@ -22,12 +22,12 @@ __all__ = [
 
 
 def dropout_mask(x: Tensor, sz: Collection[int], p: float):
-    "Return a dropout mask of the same type as `x`, size `sz`, with probability `p` to cancel an element."
+    """Return a dropout mask of the same type as `x`, size `sz`, with probability `p` to cancel an element."""
     return x.new(*sz).bernoulli_(1 - p).div_(1 - p)
 
 
 class RNNDropout(Module):
-    "Dropout with probability `p` that is consistent on the seq_len dimension."
+    """Dropout with probability `p` that is consistent on the seq_len dimension."""
 
     def __init__(self, p: float = 0.5):
         self.p = p
@@ -263,13 +263,13 @@ class SequentialRNN(nn.Sequential):
 
 
 def awd_lstm_lm_split(model: nn.Module) -> List[List[nn.Module]]:
-    "Split a RNN `model` in groups for differential learning rates."
+    """Split a RNN `model` in groups for differential learning rates."""
     groups = [[rnn, dp] for rnn, dp in zip(model[0].rnns, model[0].hidden_dps)]
     return groups + [[model[0].encoder, model[0].encoder_dp, model[1]]]
 
 
 def awd_lstm_clas_split(model: nn.Module) -> List[List[nn.Module]]:
-    "Split a RNN `model` in groups for differential learning rates."
+    """Split a RNN `model` in groups for differential learning rates."""
     groups = [[model[0].module.encoder, model[0].module.encoder_dp]]
     groups += [[rnn, dp] for rnn, dp in zip(model[0].module.rnns, model[0].module.hidden_dps)]
     return groups + [[model[1]]]
