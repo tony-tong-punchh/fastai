@@ -275,6 +275,7 @@ def recurse_eq(arr1, arr2):
 def download_url(
     url: str,
     dest: str,
+    protocal: str = "https",
     overwrite: bool = False,
     pbar: ProgressBar = None,
     show_progress=True,
@@ -287,7 +288,10 @@ def download_url(
         return
 
     s = requests.Session()
-    s.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
+    if protocal == "https":
+        s.mount("https://", requests.adapters.HTTPSAdapter(max_retries=retries))
+    else:
+        s.mount("http://", requests.adapters.HTTPAdapter(max_retries=retries))
     # additional line to identify as a firefox browser, see #2438
     s.headers.update(
         {
